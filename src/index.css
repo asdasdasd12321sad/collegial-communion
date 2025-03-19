@@ -1,10 +1,11 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -13,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -32,22 +33,15 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -61,7 +55,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
+    --primary: 217 91% 60%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -79,6 +73,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -97,5 +92,114 @@
 
   body {
     @apply bg-background text-foreground;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .animate-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .animate-out {
+    animation: fadeOut 0.3s ease-out;
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .glass-effect {
+    @apply bg-white bg-opacity-80 backdrop-blur-md border border-white border-opacity-20;
+  }
+  
+  .channel-card {
+    @apply relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:shadow-md;
+    transform: translateZ(0);
+  }
+  
+  .channel-card:before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-b from-transparent to-black/5 opacity-0 transition-opacity duration-300;
+  }
+  
+  .channel-card:hover:before {
+    @apply opacity-100;
+  }
+  
+  .nav-icon {
+    @apply relative h-6 w-6 transition-all duration-300 ease-in-out;
+  }
+  
+  .nav-text {
+    @apply text-xs font-medium transition-all duration-300 ease-in-out;
+  }
+  
+  .nav-item {
+    @apply flex flex-col items-center justify-center space-y-1 px-5 py-2;
+  }
+  
+  .nav-item.active .nav-icon {
+    @apply text-cendy-blue;
+  }
+  
+  .nav-item.active .nav-text {
+    @apply text-cendy-blue;
+  }
+  
+  .nav-item:not(.active) .nav-icon {
+    @apply text-cendy-gray-dark;
+  }
+  
+  .nav-item:not(.active) .nav-text {
+    @apply text-cendy-gray-dark;
+  }
+  
+  .ripple {
+    background-position: center;
+    transition: background 0.5s;
+  }
+  
+  .ripple:hover {
+    background: radial-gradient(circle, transparent 1%, rgba(0, 0, 0, 0.05) 1%) center/15000%;
+  }
+  
+  .ripple:active {
+    background-size: 100%;
+    transition: background 0s;
+  }
+  
+  .button-transition {
+    @apply transition-all duration-200 ease-in-out active:scale-95;
+  }
+  
+  .section-transition {
+    @apply animate-fade-in;
+  }
+  
+  .hover-card-effect {
+    @apply transition duration-300 hover:translate-y-[-2px] hover:shadow-md;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
   }
 }

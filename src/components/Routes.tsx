@@ -1,0 +1,49 @@
+
+import React from 'react';
+import { Routes as RouterRoutes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import Login from '@/pages/Login';
+import Home from '@/pages/Home';
+import Messages from '@/pages/Messages';
+import Settings from '@/pages/Settings';
+import DisplayNameForm from '@/components/auth/DisplayNameForm';
+import BottomNavigation from '@/components/layout/BottomNavigation';
+import LoadingScreen from '@/components/common/LoadingScreen';
+
+const Routes: React.FC = () => {
+  const { user, isLoading, needsDisplayName } = useAuth();
+  
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+  
+  // If the user is signed in but needs a display name
+  if (user && needsDisplayName) {
+    return <DisplayNameForm />;
+  }
+  
+  // If the user is not authenticated, show the Login page
+  if (!user) {
+    return (
+      <RouterRoutes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </RouterRoutes>
+    );
+  }
+  
+  // The user is authenticated and has a display name
+  return (
+    <>
+      <RouterRoutes>
+        <Route path="/" element={<Home />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </RouterRoutes>
+      <BottomNavigation />
+    </>
+  );
+};
+
+export default Routes;
