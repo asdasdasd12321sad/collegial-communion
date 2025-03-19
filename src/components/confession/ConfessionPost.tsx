@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MessageCircle, Flag, Heart, ThumbsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -53,12 +52,16 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
       return;
     }
     
-    // If user already reacted with this type, do nothing
-    if (userReaction === type) return;
+    // If user already reacted with this type, remove the reaction
+    if (userReaction === type) {
+      setUserReaction(null);
+      onReactionClick('remove');
+    } else {
+      // Set the user's reaction
+      setUserReaction(type);
+      onReactionClick(type);
+    }
     
-    // Set the user's reaction
-    setUserReaction(type);
-    onReactionClick(type);
     setIsOpen(false);
   };
   
@@ -81,9 +84,15 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
       
-      // If the popover isn't open, this was a quick tap - add a like
-      if (!isOpen && userReaction === null) {
-        handleReactionClick('like');
+      // If the popover isn't open, this was a quick tap
+      if (!isOpen) {
+        // If they already reacted with like, remove it
+        if (userReaction === 'like') {
+          handleReactionClick('like'); // This will remove the reaction
+        } else {
+          // Otherwise add a like
+          handleReactionClick('like');
+        }
       }
     }
   };
@@ -128,22 +137,8 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
     angry: '😡'
   };
   
-  // Determine text and button color based on user's reaction
-  const getReactionColor = (): string => {
-    if (!userReaction) return 'text-cendy-text-secondary';
-    
-    switch (userReaction) {
-      case 'like': return 'text-blue-500';
-      case 'heart': return 'text-red-500';
-      case 'laugh': return 'text-amber-500';
-      case 'wow': return 'text-purple-500';
-      case 'sad': return 'text-blue-400';
-      case 'angry': return 'text-orange-500';
-      default: return 'text-cendy-text-secondary';
-    }
-  };
-  
-  const reactionColor = getReactionColor();
+  // Single color for all reactions - using Cendy blue
+  const reactionColor = userReaction ? 'text-cendy-blue' : 'text-cendy-text-secondary';
   
   return (
     <div className={cn(
@@ -198,12 +193,12 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
                         </span>
                       ))}
                     </div>
-                    <span className={`text-sm ${reactionColor}`}>{totalReactions}</span>
+                    <span className="text-sm">{totalReactions}</span>
                   </>
                 ) : (
                   <>
-                    <ThumbsUp size={16} className={reactionColor} />
-                    <span className={`text-sm ${reactionColor}`}>React</span>
+                    <ThumbsUp size={16} />
+                    <span className="text-sm">React</span>
                   </>
                 )}
               </button>
