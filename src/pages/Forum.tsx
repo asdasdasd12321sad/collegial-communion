@@ -16,7 +16,7 @@ const SAMPLE_FORUM_POSTS = [
     authorName: 'StudyBuddy',
     authorSchool: 'Harvard',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-    reactions: { like: 15, laugh: 0, sad: 0, angry: 0 },
+    reactions: { like: 15, heart: 7, laugh: 0, wow: 2, sad: 0, angry: 0 },
     commentCount: 12,
     tags: ['study', 'campus']
   },
@@ -27,7 +27,7 @@ const SAMPLE_FORUM_POSTS = [
     authorName: 'CodeWarrior',
     authorSchool: 'Stanford',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
-    reactions: { like: 8, laugh: 2, sad: 5, angry: 0 },
+    reactions: { like: 8, heart: 3, laugh: 2, wow: 1, sad: 5, angry: 0 },
     commentCount: 7,
     tags: ['study', 'cs', 'classes']
   },
@@ -38,7 +38,7 @@ const SAMPLE_FORUM_POSTS = [
     authorName: 'FoodieStudent',
     authorSchool: 'Yale',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(), // 36 hours ago
-    reactions: { like: 27, laugh: 0, sad: 0, angry: 0 },
+    reactions: { like: 27, heart: 15, laugh: 0, wow: 8, sad: 0, angry: 0 },
     commentCount: 18,
     tags: ['food', 'fun']
   }

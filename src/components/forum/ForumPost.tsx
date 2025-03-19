@@ -1,15 +1,18 @@
 
-import React from 'react';
-import { MessageCircle, Flag } from 'lucide-react';
+import React, { useState } from 'react';
+import { MessageCircle, Flag, ThumbsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface ReactionCounts {
   like: number;
+  heart: number;
   laugh: number;
+  wow: number;
   sad: number;
   angry: number;
 }
@@ -43,6 +46,7 @@ const ForumPost: React.FC<ForumPostProps> = ({
 }) => {
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
+  const [isHovered, setIsHovered] = useState(false);
   
   const handleReactionClick = (type: string) => {
     if (!isVerified) {
@@ -65,6 +69,29 @@ const ForumPost: React.FC<ForumPostProps> = ({
   
   const formattedTime = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
   const firstLetter = authorName.charAt(0).toUpperCase();
+  
+  // Get the two most popular reactions
+  const getTopReactions = () => {
+    const sortedReactions = Object.entries(reactions)
+      .sort(([, countA], [, countB]) => countB - countA)
+      .filter(([, count]) => count > 0)
+      .slice(0, 2);
+    
+    return sortedReactions;
+  };
+  
+  const topReactions = getTopReactions();
+  const totalReactions = Object.values(reactions).reduce((sum, count) => sum + count, 0);
+  
+  // Map reaction types to emojis
+  const reactionEmojis: Record<string, string> = {
+    like: '👍',
+    heart: '❤️',
+    laugh: '😂',
+    wow: '😮',
+    sad: '😢',
+    angry: '😡'
+  };
   
   return (
     <div className={cn(
@@ -112,31 +139,48 @@ const ForumPost: React.FC<ForumPostProps> = ({
       
       {/* Reactions & Comments */}
       <div className="flex items-center justify-between pt-2 border-t border-cendy-gray-medium">
-        <div className="flex gap-2">
-          <button 
-            onClick={() => handleReactionClick('like')} 
-            className="reaction-btn"
-          >
-            👍 {reactions.like}
-          </button>
-          <button 
-            onClick={() => handleReactionClick('laugh')} 
-            className="reaction-btn"
-          >
-            😂 {reactions.laugh}
-          </button>
-          <button 
-            onClick={() => handleReactionClick('sad')} 
-            className="reaction-btn"
-          >
-            😢 {reactions.sad}
-          </button>
-          <button 
-            onClick={() => handleReactionClick('angry')} 
-            className="reaction-btn"
-          >
-            😡 {reactions.angry}
-          </button>
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button 
+                className="reaction-display flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
+                {topReactions.length > 0 ? (
+                  <>
+                    <div className="flex -space-x-1">
+                      {topReactions.map(([type]) => (
+                        <span key={type} className="reaction-emoji">
+                          {reactionEmojis[type]}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-sm text-cendy-text-secondary">{totalReactions}</span>
+                  </>
+                ) : (
+                  <>
+                    <ThumbsUp size={16} className="text-cendy-text-secondary" />
+                    <span className="text-sm text-cendy-text-secondary">React</span>
+                  </>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-1 bg-white shadow-lg rounded-full border-none">
+              <div className="flex space-x-1 px-1">
+                {Object.entries(reactionEmojis).map(([type, emoji]) => (
+                  <button
+                    key={type}
+                    onClick={() => handleReactionClick(type)}
+                    className="reaction-button p-2 hover:bg-gray-100 rounded-full transition-transform hover:scale-125"
+                    title={type.charAt(0).toUpperCase() + type.slice(1)}
+                  >
+                    <span className="text-xl">{emoji}</span>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         
         <button 
@@ -148,23 +192,22 @@ const ForumPost: React.FC<ForumPostProps> = ({
         </button>
       </div>
       
-      {/* Reaction button styles */}
-      <style jsx>{`
-        .reaction-btn {
-          display: flex;
-          align-items: center;
-          gap: 2px;
-          padding: 4px 8px;
-          border-radius: 16px;
-          background-color: #f7f7f7;
-          font-size: 0.875rem;
-          transition: all 0.2s;
-        }
-        
-        .reaction-btn:hover {
-          background-color: #e6e6e6;
-        }
-      `}</style>
+      <style>
+        {`
+          .reaction-emoji {
+            font-size: 1.2rem;
+          }
+          
+          .reaction-button {
+            cursor: pointer;
+            transition: transform 0.2s;
+          }
+          
+          .reaction-button:hover {
+            transform: scale(1.2);
+          }
+        `}
+      </style>
     </div>
   );
 };

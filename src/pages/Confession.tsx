@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, PlusCircle, Filter } from 'lucide-react';
 import Header from '@/components/layout/Header';
@@ -13,7 +12,7 @@ const SAMPLE_CONFESSIONS = [
     id: '1',
     content: "I've been pretending to understand calculus all semester. Finals are next week. Help!",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-    reactions: { like: 24, laugh: 13, sad: 5, angry: 0 },
+    reactions: { like: 24, heart: 8, laugh: 13, wow: 5, sad: 5, angry: 0 },
     commentCount: 8,
     anonymous: true
   },
@@ -21,7 +20,7 @@ const SAMPLE_CONFESSIONS = [
     id: '2',
     content: "I accidentally called my professor 'mom' during office hours today.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-    reactions: { like: 56, laugh: 42, sad: 2, angry: 0 },
+    reactions: { like: 56, heart: 32, laugh: 42, wow: 12, sad: 2, angry: 0 },
     commentCount: 15,
     anonymous: true
   },
@@ -29,7 +28,7 @@ const SAMPLE_CONFESSIONS = [
     id: '3',
     content: "I've been eating ramen for 14 days straight because I spent my meal plan money on concert tickets. Worth it though!",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-    reactions: { like: 34, laugh: 12, sad: 20, angry: 0 },
+    reactions: { like: 34, heart: 18, laugh: 12, wow: 3, sad: 20, angry: 0 },
     commentCount: 5,
     anonymous: true
   }
