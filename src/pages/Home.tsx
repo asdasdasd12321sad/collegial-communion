@@ -1,12 +1,14 @@
 
 import React, { useState } from 'react';
 import { Hash, Globe, LayoutList, Building, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import ChannelCard from '@/components/home/ChannelCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
   
@@ -16,32 +18,36 @@ const Home: React.FC = () => {
       title: 'Confession',
       description: 'Share anonymously with other students',
       icon: <Hash size={24} />,
-      count: 12
+      count: 12,
+      path: '/confession'
     },
     {
       id: 'campus',
       title: 'Community - Campus',
       description: 'Discussions about campus life and events',
       icon: <Building size={24} />,
-      count: 8
+      count: 8,
+      path: '/campus'
     },
     {
       id: 'forum',
       title: 'Forum',
       description: 'General discussions and topics',
       icon: <LayoutList size={24} />,
-      count: 5
+      count: 5,
+      path: '/forum'
     },
     {
       id: 'nationwide',
       title: 'Community - Nationwide',
       description: 'Connect with students across the country',
       icon: <Globe size={24} />,
-      count: 3
+      count: 3,
+      path: '/nationwide'
     }
   ]);
   
-  const handleChannelClick = (channelId: string) => {
+  const handleChannelClick = (channelId: string, path: string) => {
     if (!isVerified) {
       toast({
         title: "Verification Required",
@@ -50,11 +56,8 @@ const Home: React.FC = () => {
       });
     }
     
-    // For this demo, we'll just show a toast notification
-    toast({
-      title: "Channel Selected",
-      description: `You selected the ${channelId} channel.`,
-    });
+    // Navigate to the channel page
+    navigate(path);
   };
   
   return (
@@ -81,7 +84,7 @@ const Home: React.FC = () => {
               description={channel.description}
               icon={channel.icon}
               count={channel.count}
-              onClick={() => handleChannelClick(channel.id)}
+              onClick={() => handleChannelClick(channel.id, channel.path)}
               className={`animate-fade-in [animation-delay:${index * 100}ms]`}
             />
           ))}

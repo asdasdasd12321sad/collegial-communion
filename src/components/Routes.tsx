@@ -6,6 +6,9 @@ import Login from '@/pages/Login';
 import Home from '@/pages/Home';
 import Messages from '@/pages/Messages';
 import Settings from '@/pages/Settings';
+import Confession from '@/pages/Confession';
+import Forum from '@/pages/Forum';
+import CampusCommunity from '@/pages/CampusCommunity';
 import DisplayNameForm from '@/components/auth/DisplayNameForm';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import LoadingScreen from '@/components/common/LoadingScreen';
@@ -39,6 +42,9 @@ const Routes: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/confession" element={<Confession />} />
+        <Route path="/forum" element={<Forum />} />
+        <Route path="/campus" element={<CampusCommunity />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </RouterRoutes>
       <BottomNavigation />
