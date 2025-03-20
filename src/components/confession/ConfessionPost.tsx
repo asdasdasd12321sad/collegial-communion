@@ -42,7 +42,7 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
   
   return (
     <div className={cn(
-      "bg-white rounded-xl p-4 shadow-sm transition-all hover-card-effect",
+      "bg-white rounded-xl p-4 shadow-sm transition-all hover:shadow-md",
       className
     )}>
       {/* Post Header */}
@@ -81,7 +81,7 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
         
         <button 
           onClick={onCommentClick}
-          className="flex items-center gap-1 text-cendy-text-secondary"
+          className="flex items-center gap-1 text-cendy-text-secondary hover:text-cendy-text transition-colors"
         >
           <MessageCircle size={18} />
           <span className="text-sm">{commentCount}</span>

@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useCallback } from 'react';
 import { ThumbsUp } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export interface ReactionCounts {
@@ -29,8 +29,8 @@ const ReactionButton: React.FC<ReactionButtonProps> = ({
   const [userReaction, setUserReaction] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   
-  // Map reaction types to emojis
   const reactionEmojis: Record<string, string> = {
     like: '👍',
     heart: '❤️',
@@ -39,92 +39,72 @@ const ReactionButton: React.FC<ReactionButtonProps> = ({
     sad: '😢',
     angry: '😡'
   };
-  
-  const handleReactionClick = (type: string) => {
-    if (!isVerified) {
-      toast({
-        title: "Verification Required",
-        description: "Only verified users can react to posts.",
-        variant: "default",
-      });
-      return;
-    }
+
+  const handleReactionSelect = useCallback((type: string) => {
+    if (!isVerified) return;
     
-    // If user already reacted with this type, remove the reaction
     if (userReaction === type) {
       setUserReaction(null);
       onReactionClick('remove');
     } else {
-      // Set the user's reaction
       setUserReaction(type);
       onReactionClick(type);
     }
-    
     setIsOpen(false);
-  };
-  
-  const handleButtonMouseDown = () => {
+  }, [isVerified, userReaction, onReactionClick]);
+
+  const handleButtonMouseDown = useCallback(() => {
     if (!isVerified) return;
     
-    // Start a timer for long press detection
-    const timer = setTimeout(() => {
+    longPressTimerRef.current = setTimeout(() => {
       setIsOpen(true);
-    }, 500); // 500ms is a good threshold for "slightly hold"
-    
-    longPressTimerRef.current = timer;
-  };
-  
-  const handleButtonMouseUp = () => {
+    }, 500);
+  }, [isVerified]);
+
+  const handleButtonMouseUp = useCallback(() => {
     if (!isVerified) return;
-    
-    // If the timer exists and hasn't triggered yet
+
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
       
-      // If the popover isn't open, this was a quick tap
-      if (!isOpen) {
-        // If they already reacted with like, remove it
-        if (userReaction === 'like') {
-          handleReactionClick('like'); // This will remove the reaction
-        } else {
-          // Otherwise add a like
-          handleReactionClick('like');
-        }
+      if (!isOpen && !isDragging) {
+        handleReactionSelect(userReaction === 'like' ? 'remove' : 'like');
       }
     }
-  };
-  
-  const handleButtonMouseLeave = () => {
-    // Clear the timer if the user moves away
+    setIsDragging(false);
+  }, [isVerified, isOpen, isDragging, userReaction, handleReactionSelect]);
+
+  const handleButtonMouseLeave = useCallback(() => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
-  };
-  
+  }, []);
+
   // Get the two most popular reactions
   const getTopReactions = () => {
-    const sortedReactions = Object.entries(reactions)
+    return Object.entries(reactions)
       .sort(([, countA], [, countB]) => countB - countA)
       .filter(([, count]) => count > 0)
       .slice(0, 2);
-    
-    return sortedReactions;
   };
-  
-  const topReactions = getTopReactions();
+
   const totalReactions = Object.values(reactions).reduce((sum, count) => sum + count, 0);
+  const topReactions = getTopReactions();
   
-  // Use Cendy blue when user has reacted
-  const reactionColor = userReaction ? 'text-cendy-blue' : 'text-cendy-text-secondary';
-  
+  const buttonClassName = cn(
+    "flex items-center gap-2 px-3 py-2 rounded-lg transition-all",
+    userReaction ? "text-cendy-blue bg-cendy-blue/10" : "text-cendy-text-secondary hover:bg-gray-100",
+    className
+  );
+
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className="relative">
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <button 
-            className={`reaction-display flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 ${reactionColor}`}
+            className={buttonClassName}
             onMouseDown={handleButtonMouseDown}
             onMouseUp={handleButtonMouseUp}
             onTouchStart={handleButtonMouseDown}
@@ -135,56 +115,53 @@ const ReactionButton: React.FC<ReactionButtonProps> = ({
               <>
                 <div className="flex -space-x-1">
                   {topReactions.map(([type]) => (
-                    <span key={type} className="reaction-emoji">
+                    <span key={type} className="text-xl">
                       {reactionEmojis[type]}
                     </span>
                   ))}
                 </div>
-                <span className="text-sm">{totalReactions}</span>
+                <span className={cn(
+                  "text-sm",
+                  userReaction ? "text-cendy-blue" : "text-cendy-text-secondary"
+                )}>{totalReactions}</span>
               </>
             ) : (
               <>
-                <ThumbsUp size={16} />
+                <ThumbsUp 
+                  size={18} 
+                  className={cn(
+                    "transition-transform",
+                    userReaction === 'like' && "fill-current"
+                  )} 
+                />
                 <span className="text-sm">React</span>
               </>
             )}
           </button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-auto p-1 bg-white shadow-lg rounded-full border-none" 
+          className="w-auto p-2 bg-white shadow-lg rounded-full border-none"
           sideOffset={5}
-          align="start"
+          align="center"
           side="top"
         >
-          <div className="flex space-x-1 px-1">
+          <div className="flex gap-1">
             {Object.entries(reactionEmojis).map(([type, emoji]) => (
               <button
                 key={type}
-                onClick={() => handleReactionClick(type)}
-                className={`reaction-button p-2 hover:bg-gray-100 rounded-full transition-transform hover:scale-125 ${userReaction === type ? 'bg-gray-100 scale-125' : ''}`}
+                onClick={() => handleReactionSelect(type)}
+                className={cn(
+                  "p-2 rounded-full transition-all hover:scale-125",
+                  userReaction === type ? "bg-cendy-blue/10 scale-125" : "hover:bg-gray-100"
+                )}
                 title={type.charAt(0).toUpperCase() + type.slice(1)}
               >
-                <span className="text-xl">{emoji}</span>
+                <span className="text-2xl">{emoji}</span>
               </button>
             ))}
           </div>
         </PopoverContent>
       </Popover>
-      
-      <style jsx>{`
-        .reaction-emoji {
-          font-size: 1.2rem;
-        }
-        
-        .reaction-button {
-          cursor: pointer;
-          transition: transform 0.2s;
-        }
-        
-        .reaction-button:hover {
-          transform: scale(1.2);
-        }
-      `}</style>
     </div>
   );
 };
