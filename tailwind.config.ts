@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -73,6 +72,15 @@ export default {
 					surface: '#FFFFFF',
 					text: '#212121',
 					'text-secondary': '#757575'
+				},
+				reaction: {
+					like: '#1E88E5',
+					love: '#ED5167',
+					care: '#FFD96A',
+					haha: '#FFD96A',
+					wow: '#FFD96A',
+					sad: '#64B5F6',
+					angry: '#F6876B'
 				}
 			},
 			borderRadius: {
@@ -112,6 +120,10 @@ export default {
 				'pulse-subtle': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.85' }
+				},
+				'reaction-bounce': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-6px)' }
 				}
 			},
 			animation: {
@@ -122,7 +134,8 @@ export default {
 				'scale-in': 'scale-in 0.2s ease-out',
 				'slide-in': 'slide-in 0.3s ease-out',
 				'slide-out': 'slide-out 0.3s ease-out',
-				'pulse-subtle': 'pulse-subtle 2s infinite ease-in-out'
+				'pulse-subtle': 'pulse-subtle 2s infinite ease-in-out',
+				'reaction-bounce': 'reaction-bounce 0.6s ease infinite'
 			}
 		}
 	},

@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { MessageCircle, Flag, Heart, ThumbsUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
+import React, { useState, useRef } from 'react';
+import { MessageCircle, Flag, ThumbsUp } from 'lucide-react';
+import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import ReactionButton from "@/components/ui/reaction-button";
+import ReactionPopover, { ReactionType } from "@/components/ui/reaction-popover";
 
 interface ReactionCounts {
   like: number;
@@ -38,11 +40,11 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
 }) => {
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
-  const [userReaction, setUserReaction] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [userReaction, setUserReaction] = useState<ReactionType>(null);
+  const [showReactionPopover, setShowReactionPopover] = useState(false);
+  const likeButtonRef = useRef<HTMLDivElement>(null);
   
-  const handleReactionClick = (type: string) => {
+  const handleReaction = (reaction: ReactionType) => {
     if (!isVerified) {
       toast({
         title: "Verification Required",
@@ -52,57 +54,48 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
       return;
     }
     
-    // If user already reacted with this type, remove the reaction
-    if (userReaction === type) {
+    // If the same reaction is selected, remove it
+    if (userReaction === reaction) {
       setUserReaction(null);
       onReactionClick('remove');
     } else {
       // Set the user's reaction
-      setUserReaction(type);
-      onReactionClick(type);
-    }
-    
-    setIsOpen(false);
-  };
-  
-  const handleButtonMouseDown = () => {
-    if (!isVerified) return;
-    
-    // Start a timer for long press detection
-    const timer = setTimeout(() => {
-      setIsOpen(true);
-    }, 500); // 500ms is a good threshold for "slightly hold"
-    
-    setLongPressTimer(timer);
-  };
-  
-  const handleButtonMouseUp = () => {
-    if (!isVerified) return;
-    
-    // If the timer exists and hasn't triggered yet
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-      
-      // If the popover isn't open, this was a quick tap
-      if (!isOpen) {
-        // If they already reacted with like, remove it
-        if (userReaction === 'like') {
-          handleReactionClick('like'); // This will remove the reaction
-        } else {
-          // Otherwise add a like
-          handleReactionClick('like');
-        }
-      }
+      setUserReaction(reaction);
+      onReactionClick(reaction || 'like');
     }
   };
   
-  const handleButtonMouseLeave = () => {
-    // Clear the timer if the user moves away
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
+  const handleLikeClick = () => {
+    if (!isVerified) {
+      toast({
+        title: "Verification Required",
+        description: "Only verified users can react to posts.",
+        variant: "default",
+      });
+      return;
     }
+    
+    // Toggle like reaction
+    if (userReaction === 'like') {
+      setUserReaction(null);
+      onReactionClick('remove');
+    } else {
+      setUserReaction('like');
+      onReactionClick('like');
+    }
+  };
+  
+  const handleLongPress = () => {
+    if (!isVerified) {
+      toast({
+        title: "Verification Required",
+        description: "Only verified users can react to posts.",
+        variant: "default",
+      });
+      return;
+    }
+    
+    setShowReactionPopover(true);
   };
   
   const handleReportClick = () => {
@@ -131,14 +124,53 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
   const reactionEmojis: Record<string, string> = {
     like: '👍',
     heart: '❤️',
-    laugh: '😂',
+    laugh: '😆',
     wow: '😮',
     sad: '😢',
     angry: '😡'
   };
   
-  // Single color for all reactions - using Cendy blue
-  const reactionColor = userReaction ? 'text-cendy-blue' : 'text-cendy-text-secondary';
+  const getReactionIcon = () => {
+    switch (userReaction) {
+      case "like":
+        return <ThumbsUp size={16} />;
+      case "heart":
+        return <span className="text-lg">❤️</span>;
+      case "laugh":
+        return <span className="text-lg">😆</span>;
+      case "wow":
+        return <span className="text-lg">😮</span>;
+      case "sad":
+        return <span className="text-lg">😢</span>;
+      case "angry":
+        return <span className="text-lg">😡</span>;
+      default:
+        return <ThumbsUp size={16} />;
+    }
+  };
+
+  const getReactionText = () => {
+    if (!userReaction) return "React";
+    return userReaction.charAt(0).toUpperCase() + userReaction.slice(1);
+  };
+
+  const getReactionColor = () => {
+    switch (userReaction) {
+      case "like":
+        return "text-cendy-blue";
+      case "heart":
+        return "text-red-500";
+      case "laugh":
+      case "wow":
+        return "text-yellow-500";
+      case "sad":
+        return "text-blue-500";
+      case "angry":
+        return "text-orange-600";
+      default:
+        return "";
+    }
+  };
   
   return (
     <div className={cn(
@@ -173,83 +205,34 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
       
       {/* Reactions & Comments */}
       <div className="flex items-center justify-between pt-2 border-t border-cendy-gray-medium">
-        <div className="flex items-center gap-2">
-          <Popover open={isOpen} onOpenChange={setIsOpen}>
-            <PopoverTrigger asChild>
-              <button 
-                className={`reaction-display flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 ${reactionColor}`}
-                onMouseDown={handleButtonMouseDown}
-                onMouseUp={handleButtonMouseUp}
-                onTouchStart={handleButtonMouseDown}
-                onTouchEnd={handleButtonMouseUp}
-                onMouseLeave={handleButtonMouseLeave}
-              >
-                {topReactions.length > 0 ? (
-                  <>
-                    <div className="flex -space-x-1">
-                      {topReactions.map(([type]) => (
-                        <span key={type} className="reaction-emoji">
-                          {reactionEmojis[type]}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-sm">{totalReactions}</span>
-                  </>
-                ) : (
-                  <>
-                    <ThumbsUp size={16} />
-                    <span className="text-sm">React</span>
-                  </>
-                )}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent 
-              className="w-auto p-1 bg-white shadow-lg rounded-full border-none" 
-              sideOffset={5}
-              align="start"
-              side="top"
-            >
-              <div className="flex space-x-1 px-1">
-                {Object.entries(reactionEmojis).map(([type, emoji]) => (
-                  <button
-                    key={type}
-                    onClick={() => handleReactionClick(type)}
-                    className={`reaction-button p-2 hover:bg-gray-100 rounded-full transition-transform hover:scale-125 ${userReaction === type ? 'bg-gray-100 scale-125' : ''}`}
-                    title={type.charAt(0).toUpperCase() + type.slice(1)}
-                  >
-                    <span className="text-xl">{emoji}</span>
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+        <div ref={likeButtonRef} className="flex-1 relative">
+          <ReactionButton
+            icon={getReactionIcon()}
+            text={getReactionText()}
+            active={!!userReaction}
+            activeColor={getReactionColor()}
+            onClick={handleLikeClick}
+            onLongPress={handleLongPress}
+            className="w-full"
+          />
+          
+          <ReactionPopover
+            isOpen={showReactionPopover}
+            onReactionSelect={handleReaction}
+            onClose={() => setShowReactionPopover(false)}
+            triggerRef={likeButtonRef}
+            currentReaction={userReaction}
+          />
         </div>
         
         <button 
           onClick={onCommentClick}
-          className="flex items-center gap-1 text-cendy-text-secondary"
+          className="flex items-center gap-1 text-cendy-text-secondary px-2 py-1"
         >
           <MessageCircle size={18} />
           <span className="text-sm">{commentCount}</span>
         </button>
       </div>
-      
-      <style>
-        {`
-          .reaction-emoji {
-            font-size: 1.2rem;
-          }
-          
-          .reaction-button {
-            cursor: pointer;
-            transition: transform 0.2s;
-          }
-          
-          .reaction-button:hover {
-            transform: scale(1.2);
-          }
-        `}
-      </style>
     </div>
   );
 };
