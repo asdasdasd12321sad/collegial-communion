@@ -18,7 +18,7 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
     reactions: { like: 15, heart: 7, laugh: 0, wow: 2, sad: 0, angry: 0 },
     commentCount: 12,
-    tags: ['study', 'campus'],
+    tags: [],
     topic: 'Campus'
   },
   {
@@ -30,7 +30,7 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
     reactions: { like: 8, heart: 3, laugh: 2, wow: 1, sad: 5, angry: 0 },
     commentCount: 7,
-    tags: ['study', 'cs', 'classes'],
+    tags: [],
     topic: 'Classes'
   },
   {
@@ -42,7 +42,7 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(), // 36 hours ago
     reactions: { like: 27, heart: 15, laugh: 0, wow: 8, sad: 0, angry: 0 },
     commentCount: 18,
-    tags: ['food', 'fun'],
+    tags: [],
     topic: 'Food'
   }
 ];
@@ -170,9 +170,9 @@ const Forum: React.FC = () => {
         </div>
         
         {/* Filter Options */}
-        <div className="flex p-2 gap-2">
+        <div className="flex pt-0 pb-2 px-4 gap-2">
           <Select value={sortOption} onValueChange={setSortOption}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-10 px-4 py-2">
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
             <SelectContent>
@@ -185,7 +185,7 @@ const Forum: React.FC = () => {
           </Select>
           
           <Select value={topicFilter} onValueChange={setTopicFilter}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-10 px-4 py-2">
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -201,7 +201,7 @@ const Forum: React.FC = () => {
       
       <main className="flex-1 p-0">
         {/* Forum Posts */}
-        <div className="space-y-2">
+        <div className="space-y-0">
           {posts.map((post, index) => (
             <ForumPost
               key={post.id}
@@ -225,9 +225,14 @@ const Forum: React.FC = () => {
         {/* Floating Add Button */}
         <button
           onClick={handleCreatePost}
-          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
+          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
+          style={{
+            backgroundImage: 'url(lovable-uploads/5b26616e-0e45-435e-b3fd-673d02bc994b.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
         >
-          <PlusCircle size={24} />
+          <PlusCircle size={24} className="text-white" />
         </button>
         
         {/* Empty state if no posts match the filter */}

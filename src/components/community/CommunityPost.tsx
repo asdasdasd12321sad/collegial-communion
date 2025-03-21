@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { MessageCircle, Flag, Send } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
 interface CommunityPostProps {
+  title?: string;
   content: string;
   authorName: string;
   authorGender: string;
@@ -14,14 +15,14 @@ interface CommunityPostProps {
   createdAt: string;
   commentCount: number;
   imageUrl?: string;
-  onChatClick: () => void;
-  onCommentClick: () => void;
+  onPostClick: () => void;
   className?: string;
   topic?: string;
   fullWidth?: boolean;
 }
 
 const CommunityPost: React.FC<CommunityPostProps> = ({
+  title,
   content,
   authorName,
   authorGender,
@@ -29,8 +30,7 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
   createdAt,
   commentCount,
   imageUrl,
-  onChatClick,
-  onCommentClick,
+  onPostClick,
   className,
   topic,
   fullWidth = false
@@ -38,7 +38,7 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
   
-  const handleChatClick = () => {
+  const handlePostClick = () => {
     if (!isVerified) {
       toast({
         title: "Verification Required",
@@ -47,7 +47,7 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
       });
       return;
     }
-    onChatClick();
+    onPostClick();
   };
   
   const handleReportClick = () => {
@@ -60,11 +60,14 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
   const firstLetter = authorName.charAt(0).toUpperCase();
   
   return (
-    <div className={cn(
-      "bg-white transition-all",
-      fullWidth ? "border-b border-cendy-gray-medium" : "rounded-xl shadow-sm hover-card-effect",
-      className
-    )}>
+    <div 
+      className={cn(
+        "bg-white transition-all",
+        fullWidth ? "border-b border-cendy-gray-medium" : "rounded-xl shadow-sm hover-card-effect",
+        className
+      )}
+      onClick={handlePostClick}
+    >
       {/* Post Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -88,14 +91,18 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
           </div>
         </div>
         <button 
-          onClick={handleReportClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleReportClick();
+          }}
           className="text-cendy-text-secondary hover:text-red-500"
         >
-          <Flag size={16} />
+          <MoreHorizontal size={16} />
         </button>
       </div>
       
-      {/* Post Content */}
+      {/* Post Title & Content */}
+      {title && <h3 className="font-semibold text-lg mb-2 text-cendy-text">{title}</h3>}
       <div className="mb-4">
         <p className="text-cendy-text mb-3">{content}</p>
         
@@ -110,25 +117,6 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
             />
           </div>
         )}
-      </div>
-      
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-cendy-gray-medium">
-        <button 
-          onClick={onCommentClick}
-          className="flex items-center gap-1 text-cendy-text-secondary hover:text-cendy-text transition-colors"
-        >
-          <MessageCircle size={18} />
-          <span className="text-sm">{commentCount} Comments</span>
-        </button>
-        
-        <button 
-          onClick={handleChatClick}
-          className="flex items-center gap-1 text-cendy-blue hover:text-cendy-blue-dark transition-colors"
-        >
-          <Send size={16} />
-          <span className="text-sm">Message</span>
-        </button>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 const SAMPLE_CONFESSIONS = [
   {
     id: '1',
+    title: 'Failing Calculus',
     content: "I've been pretending to understand calculus all semester. Finals are next week. Help!",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
     reactions: { like: 24, heart: 8, laugh: 13, wow: 5, sad: 5, angry: 0 },
@@ -20,6 +21,7 @@ const SAMPLE_CONFESSIONS = [
   },
   {
     id: '2',
+    title: 'Classroom Embarrassment',
     content: "I accidentally called my professor 'mom' during office hours today.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
     reactions: { like: 56, heart: 32, laugh: 42, wow: 12, sad: 2, angry: 0 },
@@ -29,6 +31,7 @@ const SAMPLE_CONFESSIONS = [
   },
   {
     id: '3',
+    title: 'Ramen Life',
     content: "I've been eating ramen for 14 days straight because I spent my meal plan money on concert tickets. Worth it though!",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
     reactions: { like: 34, heart: 18, laugh: 12, wow: 3, sad: 20, angry: 0 },
@@ -161,9 +164,9 @@ const Confession: React.FC = () => {
         </div>
         
         {/* Filter Options */}
-        <div className="flex p-2 gap-2">
+        <div className="flex pt-0 pb-2 px-4 gap-2">
           <Select value={sortOption} onValueChange={setSortOption}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-10 px-4 py-2">
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
             <SelectContent>
@@ -176,7 +179,7 @@ const Confession: React.FC = () => {
           </Select>
           
           <Select value={topicFilter} onValueChange={setTopicFilter}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-10 px-4 py-2">
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -192,10 +195,11 @@ const Confession: React.FC = () => {
       
       <main className="flex-1 p-0">
         {/* Confession Posts */}
-        <div className="space-y-2">
+        <div className="space-y-0">
           {confessions.map((confession, index) => (
             <ConfessionPost
               key={confession.id}
+              title={confession.title}
               content={confession.content}
               createdAt={formatTimestamp(confession.createdAt)}
               reactions={confession.reactions}
@@ -213,9 +217,14 @@ const Confession: React.FC = () => {
         {/* Floating Add Button */}
         <button
           onClick={handleCreatePost}
-          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
+          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
+          style={{
+            backgroundImage: 'url(lovable-uploads/5b26616e-0e45-435e-b3fd-673d02bc994b.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
         >
-          <PlusCircle size={24} />
+          <PlusCircle size={24} className="text-white" />
         </button>
         
         {/* Empty state if no confessions match the filter */}

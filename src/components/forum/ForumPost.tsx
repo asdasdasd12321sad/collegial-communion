@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { MessageCircle, Flag, ThumbsUp } from 'lucide-react';
+import { MessageCircle, MoreHorizontal, ThumbsUp } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -213,7 +213,7 @@ const ForumPost: React.FC<ForumPostProps> = ({
           onClick={handleReportClick}
           className="text-cendy-text-secondary hover:text-red-500"
         >
-          <Flag size={16} />
+          <MoreHorizontal size={16} />
         </button>
       </div>
       
@@ -223,20 +223,38 @@ const ForumPost: React.FC<ForumPostProps> = ({
         <p className="text-cendy-text">{content}</p>
       </div>
       
-      {/* Tags */}
-      {tags && tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {tags.map(tag => (
-            <Badge key={tag} variant="secondary" className="text-xs bg-cendy-gray text-cendy-text-secondary">
-              #{tag}
-            </Badge>
-          ))}
-        </div>
-      )}
-      
       {/* Reactions & Comments */}
       <div className="flex items-center justify-between pt-2 border-t border-cendy-gray-medium">
-        <div ref={likeButtonRef} className="flex-1 relative">
+        {/* Reaction count & icons */}
+        <div className="flex items-center">
+          {topReactions.length > 0 && (
+            <div className="flex items-center mr-2">
+              <div className="flex">
+                {topReactions.map(([type, _], index) => (
+                  <span key={type} className="text-sm" style={{ marginLeft: index > 0 ? '-2px' : '0' }}>
+                    {reactionEmojis[type]}
+                  </span>
+                ))}
+              </div>
+              {totalReactions > 0 && (
+                <span className="text-xs text-cendy-text-secondary ml-1">{totalReactions}</span>
+              )}
+            </div>
+          )}
+          
+          {/* Comment count */}
+          {commentCount > 0 && (
+            <button 
+              onClick={onCommentClick}
+              className="flex items-center text-cendy-text-secondary text-xs"
+            >
+              <span>{commentCount} comments</span>
+            </button>
+          )}
+        </div>
+        
+        {/* Reaction button */}
+        <div ref={likeButtonRef} className="relative">
           <ReactionButton
             icon={getReactionIcon()}
             text={getReactionText()}
@@ -244,7 +262,6 @@ const ForumPost: React.FC<ForumPostProps> = ({
             activeColor={getReactionColor()}
             onClick={handleLikeClick}
             onLongPress={handleLongPress}
-            className="w-full"
           />
           
           <ReactionPopover
@@ -255,14 +272,6 @@ const ForumPost: React.FC<ForumPostProps> = ({
             currentReaction={userReaction}
           />
         </div>
-        
-        <button 
-          onClick={onCommentClick}
-          className="flex items-center gap-1 text-cendy-text-secondary px-2 py-1"
-        >
-          <MessageCircle size={18} />
-          <span className="text-sm">{commentCount}</span>
-        </button>
       </div>
     </div>
   );

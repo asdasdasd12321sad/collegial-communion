@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Search, PlusCircle, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import CommunityPost from '@/components/community/CommunityPost';
@@ -11,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 const SAMPLE_CAMPUS_POSTS = [
   {
     id: '1',
+    title: 'Looking for a Roommate',
     content: "Looking for a roommate next semester! I'm a junior studying Computer Science. DM if interested!",
     authorName: 'Alex Thompson',
     authorGender: 'Male',
@@ -21,6 +21,7 @@ const SAMPLE_CAMPUS_POSTS = [
   },
   {
     id: '2',
+    title: 'Biology 101 Study Group',
     content: "Anyone want to form a study group for Biology 101? Finals are coming up!",
     authorName: 'Jamie Wilson',
     authorGender: 'Female',
@@ -31,6 +32,7 @@ const SAMPLE_CAMPUS_POSTS = [
   },
   {
     id: '3',
+    title: 'Beautiful Campus Sunset',
     content: "Check out the sunset from my dorm window! Campus looks amazing today.",
     authorName: 'Riley Evans',
     authorGender: 'Non-binary',
@@ -40,12 +42,6 @@ const SAMPLE_CAMPUS_POSTS = [
     imageUrl: "https://images.unsplash.com/photo-1472213984618-c79aaec300c1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
     topic: 'Campus'
   }
-];
-
-// Define sort options
-const SORT_OPTIONS = [
-  { id: 'hot', label: 'Hot' },
-  { id: 'new', label: 'New' },
 ];
 
 // Define topic filter options
@@ -66,7 +62,6 @@ const CampusCommunity: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
-  const [sortOption, setSortOption] = useState('hot');
   const [topicFilter, setTopicFilter] = useState('all');
   const [posts, setPosts] = useState(SAMPLE_CAMPUS_POSTS);
   
@@ -87,7 +82,7 @@ const CampusCommunity: React.FC = () => {
     });
   };
   
-  const handleOpenChat = (authorName: string) => {
+  const handleOpenPost = (authorName: string, postId: string) => {
     if (!isVerified) {
       toast({
         title: "Verification Required",
@@ -101,14 +96,6 @@ const CampusCommunity: React.FC = () => {
     toast({
       title: "Open Chat",
       description: `Starting chat with ${authorName}`,
-    });
-  };
-  
-  const handleOpenComments = (postId: string) => {
-    // For this demo, we'll just show a toast notification
-    toast({
-      title: "Open Comments",
-      description: `Opening comments for post ${postId}`,
     });
   };
   
@@ -161,22 +148,9 @@ const CampusCommunity: React.FC = () => {
         </div>
         
         {/* Filter Options */}
-        <div className="flex p-2 gap-2">
-          <Select value={sortOption} onValueChange={setSortOption}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-10 px-4 py-2">
-              <SelectValue placeholder="Sort By" />
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_OPTIONS.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={topicFilter} onValueChange={setTopicFilter}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-10 px-4 py-2">
+        <div className="flex pt-0 pb-2 px-4">
+          <Select value={topicFilter} onValueChange={setTopicFilter} className="w-full">
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -192,18 +166,18 @@ const CampusCommunity: React.FC = () => {
       
       <main className="flex-1 p-0">
         {/* Community Posts */}
-        <div className="space-y-2">
+        <div className="space-y-0">
           {posts.map((post, index) => (
             <CommunityPost
               key={post.id}
+              title={post.title}
               content={post.content}
               authorName={post.authorName}
               authorGender={post.authorGender}
               createdAt={formatTimestamp(post.createdAt)}
-              commentCount={post.commentCount}
+              commentCount={0}
               imageUrl={post.hasImage ? post.imageUrl : undefined}
-              onChatClick={() => handleOpenChat(post.authorName)}
-              onCommentClick={() => handleOpenComments(post.id)}
+              onPostClick={() => handleOpenPost(post.authorName, post.id)}
               className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
               topic={post.topic}
               fullWidth={true}
@@ -214,9 +188,14 @@ const CampusCommunity: React.FC = () => {
         {/* Floating Add Button */}
         <button
           onClick={handleCreatePost}
-          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
+          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
+          style={{
+            backgroundImage: 'url(lovable-uploads/5b26616e-0e45-435e-b3fd-673d02bc994b.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
         >
-          <PlusCircle size={24} />
+          <PlusCircle size={24} className="text-white" />
         </button>
         
         {/* Empty state if no posts match the filter */}

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Hash, Globe, LayoutList, Building, ArrowRight } from 'lucide-react';
+import { Hash, Globe, MessageSquareText, School } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import ChannelCard from '@/components/home/ChannelCard';
@@ -17,32 +17,28 @@ const Home: React.FC = () => {
       id: 'confession',
       title: 'Confession',
       description: 'Share anonymously with other students',
-      icon: <Hash size={24} />,
-      count: 12,
+      icon: <Hash size={28} className="text-purple-500" />,
       path: '/confession'
     },
     {
       id: 'campus',
-      title: 'Community - Campus',
+      title: 'Campus Community',
       description: 'Discussions about campus life and events',
-      icon: <Building size={24} />,
-      count: 8,
+      icon: <School size={28} className="text-green-500" />,
       path: '/campus'
     },
     {
       id: 'forum',
       title: 'Forum',
       description: 'General discussions and topics',
-      icon: <LayoutList size={24} />,
-      count: 5,
+      icon: <MessageSquareText size={28} className="text-cendy-blue" />,
       path: '/forum'
     },
     {
       id: 'nationwide',
-      title: 'Community - Nationwide',
+      title: 'Nationwide Community',
       description: 'Connect with students across the country',
-      icon: <Globe size={24} />,
-      count: 3,
+      icon: <Globe size={28} className="text-amber-500" />,
       path: '/nationwide'
     }
   ]);
@@ -62,18 +58,11 @@ const Home: React.FC = () => {
   
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <Header title="Cendy" />
+      <Header title="Cendy" showProfile={false} />
       
       <main className="flex-1 p-4">
         <div className="mb-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-cendy-text">Channels</h2>
-            
-            <button className="flex items-center gap-1 text-sm text-cendy-blue">
-              See all
-              <ArrowRight size={16} />
-            </button>
-          </div>
+          <h2 className="text-xl font-semibold text-cendy-text">Channels</h2>
         </div>
         
         <div className="space-y-3">
@@ -83,7 +72,6 @@ const Home: React.FC = () => {
               title={channel.title}
               description={channel.description}
               icon={channel.icon}
-              count={channel.count}
               onClick={() => handleChannelClick(channel.id, channel.path)}
               className={`animate-fade-in [animation-delay:${index * 100}ms]`}
             />

@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { LogOut, ChevronRight, User, Bell, Shield, HelpCircle, Info } from 'lucide-react';
-import Header from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
@@ -37,7 +36,11 @@ const Settings: React.FC = () => {
   
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <Header title="Settings" />
+      <div className="sticky top-0 z-10 border-b border-cendy-gray-medium bg-white/80 backdrop-blur-md">
+        <div className="flex h-16 items-center px-4">
+          <h1 className="text-xl font-bold text-cendy-text">Settings</h1>
+        </div>
+      </div>
       
       <main className="flex-1 p-4">
         <div className="animate-fade-in rounded-xl bg-white shadow-sm">
