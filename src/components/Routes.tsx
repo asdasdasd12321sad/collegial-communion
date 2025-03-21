@@ -21,9 +21,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoadingScreen from '@/components/common/LoadingScreen';
 
 const Routes: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   
-  if (loading) {
+  if (isLoading) {
     return <LoadingScreen />;
   }
   

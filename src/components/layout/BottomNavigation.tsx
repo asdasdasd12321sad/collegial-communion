@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, MessageCircle, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const BottomNavigation: React.FC = () => {
   const navigate = useNavigate();
