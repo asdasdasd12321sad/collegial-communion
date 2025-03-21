@@ -1,64 +1,66 @@
 
 import React from 'react';
-import { Routes as RouterRoutes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { Route, Routes as RouterRoutes, Navigate } from 'react-router-dom';
+import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Home from '@/pages/Home';
 import Messages from '@/pages/Messages';
 import Settings from '@/pages/Settings';
-import Confession from '@/pages/Confession';
+import NotFound from '@/pages/NotFound';
 import Forum from '@/pages/Forum';
-import CampusCommunity from '@/pages/CampusCommunity';
-import CommunityNationwide from '@/pages/CommunityNationwide';
-import ConfessionSearch from '@/pages/ConfessionSearch';
 import ForumSearch from '@/pages/ForumSearch';
+import Confession from '@/pages/Confession';
+import ConfessionSearch from '@/pages/ConfessionSearch';
+import CampusCommunity from '@/pages/CampusCommunity';
 import CampusCommunitySearch from '@/pages/CampusCommunitySearch';
+import CommunityNationwide from '@/pages/CommunityNationwide';
 import CommunityNationwideSearch from '@/pages/CommunityNationwideSearch';
-import DisplayNameForm from '@/components/auth/DisplayNameForm';
-import BottomNavigation from '@/components/layout/BottomNavigation';
+import UserProfile from '@/pages/UserProfile';
+
+import { useAuth } from '@/contexts/AuthContext';
 import LoadingScreen from '@/components/common/LoadingScreen';
 
 const Routes: React.FC = () => {
-  const { user, isLoading, needsDisplayName } = useAuth();
+  const { user, loading } = useAuth();
   
-  if (isLoading) {
+  if (loading) {
     return <LoadingScreen />;
   }
   
-  // If the user is signed in but needs a display name
-  if (user && needsDisplayName) {
-    return <DisplayNameForm />;
-  }
-  
-  // If the user is not authenticated, show the Login page
-  if (!user) {
-    return (
-      <RouterRoutes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </RouterRoutes>
-    );
-  }
-  
-  // The user is authenticated and has a display name
   return (
-    <>
-      <RouterRoutes>
-        <Route path="/" element={<Home />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/confession" element={<Confession />} />
-        <Route path="/confession/search" element={<ConfessionSearch />} />
-        <Route path="/forum" element={<Forum />} />
-        <Route path="/forum/search" element={<ForumSearch />} />
-        <Route path="/campus" element={<CampusCommunity />} />
-        <Route path="/campus/search" element={<CampusCommunitySearch />} />
-        <Route path="/nationwide" element={<CommunityNationwide />} />
-        <Route path="/nationwide/search" element={<CommunityNationwideSearch />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </RouterRoutes>
-      <BottomNavigation />
-    </>
+    <RouterRoutes>
+      {/* Public routes */}
+      <Route path="/" element={<Index />} />
+      <Route path="/login" element={<Login />} />
+      
+      {/* Protected routes */}
+      <Route path="/home" element={user ? <Home /> : <Navigate to="/login" />} />
+      <Route path="/messages" element={user ? <Messages /> : <Navigate to="/login" />} />
+      <Route path="/messages/search" element={user ? <Messages /> : <Navigate to="/login" />} />
+      <Route path="/settings" element={user ? <Settings /> : <Navigate to="/login" />} />
+      
+      {/* Forum routes */}
+      <Route path="/forum" element={user ? <Forum /> : <Navigate to="/login" />} />
+      <Route path="/forum/search" element={user ? <ForumSearch /> : <Navigate to="/login" />} />
+      
+      {/* Confession routes */}
+      <Route path="/confession" element={user ? <Confession /> : <Navigate to="/login" />} />
+      <Route path="/confession/search" element={user ? <ConfessionSearch /> : <Navigate to="/login" />} />
+      
+      {/* Campus Community routes */}
+      <Route path="/campus" element={user ? <CampusCommunity /> : <Navigate to="/login" />} />
+      <Route path="/campus/search" element={user ? <CampusCommunitySearch /> : <Navigate to="/login" />} />
+      
+      {/* Nationwide Community routes */}
+      <Route path="/nationwide" element={user ? <CommunityNationwide /> : <Navigate to="/login" />} />
+      <Route path="/nationwide/search" element={user ? <CommunityNationwideSearch /> : <Navigate to="/login" />} />
+      
+      {/* User Profile route */}
+      <Route path="/profile/:userId" element={user ? <UserProfile /> : <Navigate to="/login" />} />
+      
+      {/* 404 route */}
+      <Route path="*" element={<NotFound />} />
+    </RouterRoutes>
   );
 };
 

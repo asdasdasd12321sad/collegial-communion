@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import CommunityPost from '@/components/community/CommunityPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
+import Header from '@/components/layout/Header';
 
 // Sample community posts for nationwide - in a real app, this would come from an API
 const SAMPLE_NATIONWIDE_POSTS = [
@@ -91,10 +92,8 @@ const CommunityNationwide: React.FC = () => {
       return;
     }
     
-    toast({
-      title: "Open Chat",
-      description: `Starting chat with ${authorName}`,
-    });
+    // Navigate to user profile
+    navigate(`/profile/${postId}`);
   };
   
   const handleSearchClick = () => {
@@ -134,32 +133,35 @@ const CommunityNationwide: React.FC = () => {
   
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <div className="sticky top-0 z-10 border-b border-cendy-gray-medium bg-white/80 backdrop-blur-md">
-        <div className="flex h-16 items-center justify-between px-4">
+      <Header 
+        title="Community" 
+        centerTitle
+        leftElement={
           <button onClick={handleBackClick} className="flex items-center text-cendy-text">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold text-cendy-text text-center flex-1">Community</h1>
+        }
+        rightElement={
           <button onClick={handleSearchClick} className="text-cendy-text">
             <Search size={20} />
           </button>
-        </div>
-        
-        {/* Filter Options - moved up closer to headline */}
-        <div className="flex pt-0 pb-2 px-4">
-          <Select value={topicFilter} onValueChange={setTopicFilter}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              {TOPIC_FILTERS.map((filter) => (
-                <SelectItem key={filter.id} value={filter.id}>
-                  {filter.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        }
+      />
+      
+      {/* Filter Options - moved up closer to headline */}
+      <div className="flex px-4 py-2 bg-white shadow-sm">
+        <Select value={topicFilter} onValueChange={setTopicFilter}>
+          <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            {TOPIC_FILTERS.map((filter) => (
+              <SelectItem key={filter.id} value={filter.id}>
+                {filter.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       
       <main className="flex-1 p-0">
@@ -177,23 +179,24 @@ const CommunityNationwide: React.FC = () => {
                 commentCount={0}
                 imageUrl={post.hasImage ? post.imageUrl : undefined}
                 onPostClick={() => handleOpenPost(post.authorName, post.id)}
-                className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
+                className="px-4 py-3"
                 topic={post.topic}
                 fullWidth={true}
+                authorId={post.id} // Using post.id as author ID for demo
               />
               {index < posts.length - 1 && (
-                <div className="mx-auto w-full border-b-2 border-cendy-gray-medium"></div>
+                <div className="post-separator mx-auto"></div>
               )}
             </React.Fragment>
           ))}
         </div>
         
-        {/* Floating Add Button - updated design */}
+        {/* Floating Add Button - simplified design */}
         <button
           onClick={handleCreatePost}
-          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
+          className="floating-add-button"
         >
-          <PlusCircle size={24} className="text-white" />
+          <PlusCircle size={20} className="text-white" />
         </button>
         
         {/* Empty state if no posts match the filter */}

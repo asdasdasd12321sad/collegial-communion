@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, MessageCircle, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,8 @@ const BottomNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const [visible, setVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   
   const isVerified = user?.verificationStatus === 'verified';
   
@@ -35,9 +37,34 @@ const BottomNavigation: React.FC = () => {
     
     navigate(path);
   };
+
+  const controlNavbar = () => {
+    if (typeof window !== 'undefined') {
+      if (window.scrollY > lastScrollY && window.scrollY > 40) {
+        // Scrolling down
+        setVisible(false);
+      } else {
+        // Scrolling up
+        setVisible(true);
+      }
+      setLastScrollY(window.scrollY);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', controlNavbar);
+      return () => {
+        window.removeEventListener('scroll', controlNavbar);
+      };
+    }
+  }, [lastScrollY]);
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 animate-fade-in border-t border-cendy-gray-medium bg-white">
+    <div className={cn(
+      "fixed bottom-0 left-0 right-0 z-50 animate-fade-in bg-white transition-transform duration-300",
+      !visible && "translate-y-full"
+    )}>
       <div className="flex h-16 items-center justify-around">
         {navigationItems.map((item) => (
           <div 

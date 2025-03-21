@@ -7,4 +7,9 @@ interface User {
   displayName: string;
   verificationStatus: UserVerificationStatus;
   university: string | null;
+  bio?: string;
+  profilePicture?: string;
+  joinedAt?: string;
+  interests?: string[];
+  photos?: string[];
 }

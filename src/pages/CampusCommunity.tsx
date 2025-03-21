@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import CommunityPost from '@/components/community/CommunityPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
+import Header from '@/components/layout/Header';
 
 // Sample community posts - in a real app, this would come from an API
 const SAMPLE_CAMPUS_POSTS = [
@@ -14,7 +15,6 @@ const SAMPLE_CAMPUS_POSTS = [
     title: 'Looking for a Roommate',
     content: "Looking for a roommate next semester! I'm a junior studying Computer Science. DM if interested!",
     authorName: 'Alex Thompson',
-    authorGender: 'Male',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
     commentCount: 3,
     hasImage: false,
@@ -25,7 +25,6 @@ const SAMPLE_CAMPUS_POSTS = [
     title: 'Biology 101 Study Group',
     content: "Anyone want to form a study group for Biology 101? Finals are coming up!",
     authorName: 'Jamie Wilson',
-    authorGender: 'Female',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(), // 10 hours ago
     commentCount: 7,
     hasImage: false,
@@ -36,7 +35,6 @@ const SAMPLE_CAMPUS_POSTS = [
     title: 'Beautiful Campus Sunset',
     content: "Check out the sunset from my dorm window! Campus looks amazing today.",
     authorName: 'Riley Evans',
-    authorGender: 'Non-binary',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
     commentCount: 15,
     hasImage: true,
@@ -93,11 +91,8 @@ const CampusCommunity: React.FC = () => {
       return;
     }
     
-    // For this demo, we'll just show a toast notification
-    toast({
-      title: "Open Chat",
-      description: `Starting chat with ${authorName}`,
-    });
+    // Navigate to user profile instead of opening chat directly
+    navigate(`/profile/${postId}`);
   };
   
   const handleSearchClick = () => {
@@ -137,32 +132,35 @@ const CampusCommunity: React.FC = () => {
   
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <div className="sticky top-0 z-10 border-b border-cendy-gray-medium bg-white/80 backdrop-blur-md">
-        <div className="flex h-16 items-center justify-between px-4">
+      <Header 
+        title="Campus Community" 
+        centerTitle
+        leftElement={
           <button onClick={handleBackClick} className="flex items-center text-cendy-text">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold text-cendy-text text-center flex-1">Campus Community</h1>
+        }
+        rightElement={
           <button onClick={handleSearchClick} className="text-cendy-text">
             <Search size={20} />
           </button>
-        </div>
-        
-        {/* Filter Options - moved up closer to headline */}
-        <div className="flex pt-0 pb-2 px-4">
-          <Select value={topicFilter} onValueChange={setTopicFilter}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              {TOPIC_FILTERS.map((filter) => (
-                <SelectItem key={filter.id} value={filter.id}>
-                  {filter.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        }
+      />
+      
+      {/* Filter Options - moved up closer to headline */}
+      <div className="flex px-4 py-2 bg-white shadow-sm">
+        <Select value={topicFilter} onValueChange={setTopicFilter}>
+          <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            {TOPIC_FILTERS.map((filter) => (
+              <SelectItem key={filter.id} value={filter.id}>
+                {filter.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       
       <main className="flex-1 p-0">
@@ -174,28 +172,28 @@ const CampusCommunity: React.FC = () => {
                 title={post.title}
                 content={post.content}
                 authorName={post.authorName}
-                authorGender={post.authorGender}
                 createdAt={formatTimestamp(post.createdAt)}
                 commentCount={0}
                 imageUrl={post.hasImage ? post.imageUrl : undefined}
                 onPostClick={() => handleOpenPost(post.authorName, post.id)}
-                className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
+                className="px-4 py-3"
                 topic={post.topic}
                 fullWidth={true}
+                authorId={post.id} // Using post.id as author ID for demo
               />
               {index < posts.length - 1 && (
-                <div className="mx-auto w-full border-b-2 border-cendy-gray-medium"></div>
+                <div className="post-separator mx-auto"></div>
               )}
             </React.Fragment>
           ))}
         </div>
         
-        {/* Floating Add Button - updated design */}
+        {/* Floating Add Button - simplified design */}
         <button
           onClick={handleCreatePost}
-          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
+          className="floating-add-button"
         >
-          <PlusCircle size={24} className="text-white" />
+          <PlusCircle size={20} className="text-white" />
         </button>
         
         {/* Empty state if no posts match the filter */}

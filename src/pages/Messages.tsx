@@ -1,9 +1,9 @@
 
 import React from 'react';
-import Header from '@/components/layout/Header';
 import { Search } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Header from '@/components/layout/Header';
 
 const Messages: React.FC = () => {
   const { user } = useAuth();
@@ -17,20 +17,21 @@ const Messages: React.FC = () => {
   
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <div className="sticky top-0 z-10 border-b border-cendy-gray-medium bg-white/80 backdrop-blur-md">
-        <div className="flex h-16 items-center justify-between px-4">
-          <h1 className="text-xl font-bold text-cendy-text">Messages</h1>
+      <Header 
+        title="Messages" 
+        centerTitle
+        rightElement={
           <button onClick={handleSearchClick} className="text-cendy-text">
             <Search size={20} />
           </button>
-        </div>
-      </div>
+        }
+      />
       
       <main className="flex-1 p-4">
         {isVerified ? (
           <div className="animate-fade-in">
             <div className="rounded-xl bg-white shadow-sm">
-              <div className="flex items-center border-b border-cendy-gray-medium p-4">
+              <div className="flex items-center p-4">
                 <div className="flex-1 text-center text-sm text-cendy-text-secondary">
                   No conversations yet
                 </div>

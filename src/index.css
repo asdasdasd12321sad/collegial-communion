@@ -186,6 +186,14 @@
     animation: reaction-bounce 0.6s ease infinite;
   }
   
+  .post-separator {
+    @apply w-full h-[2px] bg-cendy-gray-medium;
+  }
+  
+  .floating-add-button {
+    @apply fixed z-10 flex h-12 w-12 items-center justify-center rounded-full bg-cendy-blue text-white shadow-md transition-all duration-300 bottom-20 right-4;
+  }
+  
   @keyframes reaction-bounce {
     0%, 100% {
       transform: translateY(0);

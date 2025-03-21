@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { Search, PlusCircle, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Search, PlusCircle, ArrowLeft, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import ConfessionPost from '@/components/confession/ConfessionPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
+import Header from '@/components/layout/Header';
 
 // Sample confession data - in a real app, this would come from an API
 const SAMPLE_CONFESSIONS = [
@@ -16,7 +17,7 @@ const SAMPLE_CONFESSIONS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
     reactions: { like: 24, heart: 8, laugh: 13, wow: 5, sad: 5, angry: 0 },
     commentCount: 8,
-    anonymous: true,
+    anonymous: false,
     topic: 'Study'
   },
   {
@@ -26,7 +27,7 @@ const SAMPLE_CONFESSIONS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
     reactions: { like: 56, heart: 32, laugh: 42, wow: 12, sad: 2, angry: 0 },
     commentCount: 15,
-    anonymous: true,
+    anonymous: false,
     topic: 'Awkward'
   },
   {
@@ -36,18 +37,18 @@ const SAMPLE_CONFESSIONS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
     reactions: { like: 34, heart: 18, laugh: 12, wow: 3, sad: 20, angry: 0 },
     commentCount: 5,
-    anonymous: true,
+    anonymous: false,
     topic: 'Food'
   }
 ];
 
-// Define sort options - improved appearance
+// Define sort options with icons
 const SORT_OPTIONS = [
-  { id: 'hot', label: 'Hot' },
-  { id: 'new', label: 'New' },
+  { id: 'hot', label: 'Hot', icon: <TrendingUp size={16} className="mr-2" /> },
+  { id: 'new', label: 'New', icon: <Clock size={16} className="mr-2" /> },
 ];
 
-// Define topic filter options - improved appearance
+// Define topic filter options
 const TOPIC_FILTERS = [
   { id: 'all', label: 'All Categories' },
   { id: 'study', label: 'Study' },
@@ -155,45 +156,54 @@ const Confession: React.FC = () => {
   
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <div className="sticky top-0 z-10 border-b border-cendy-gray-medium bg-white/80 backdrop-blur-md">
-        <div className="flex h-16 items-center justify-between px-4">
+      <Header 
+        title="Confession" 
+        centerTitle
+        leftElement={
           <button onClick={handleBackClick} className="flex items-center text-cendy-text">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold text-cendy-text text-center flex-1">Confession</h1>
+        }
+        rightElement={
           <button onClick={handleSearchClick} className="text-cendy-text">
             <Search size={20} />
           </button>
-        </div>
-        
-        {/* Filter Options - improved appearance and moved up */}
-        <div className="flex pt-0 pb-2 px-4 gap-2">
-          <Select value={sortOption} onValueChange={setSortOption}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
+        }
+      />
+      
+      {/* Filter Options - improved appearance and moved closer to header */}
+      <div className="flex px-4 py-2 gap-2 bg-white shadow-sm">
+        <Select value={sortOption} onValueChange={setSortOption}>
+          <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
+            <div className="flex items-center">
+              {SORT_OPTIONS.find(opt => opt.id === sortOption)?.icon}
               <SelectValue placeholder="Sort By" />
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_OPTIONS.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                <div className="flex items-center">
+                  {option.icon}
                   {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={topicFilter} onValueChange={setTopicFilter}>
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              {TOPIC_FILTERS.map((filter) => (
-                <SelectItem key={filter.id} value={filter.id}>
-                  {filter.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <Select value={topicFilter} onValueChange={setTopicFilter}>
+          <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            {TOPIC_FILTERS.map((filter) => (
+              <SelectItem key={filter.id} value={filter.id}>
+                {filter.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       
       <main className="flex-1 p-0">
@@ -222,22 +232,23 @@ const Confession: React.FC = () => {
                     topic={confession.topic}
                     onReactionClick={(reactionType) => handleReactionClick(confession.id, reactionType)}
                     onCommentClick={() => handleOpenComments(confession.id)}
-                    className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
+                    className="px-4 py-3"
                     fullWidth={true}
+                    authorId={confession.id} // Using confession.id as author ID for demo
                   />
                   {index < confessions.length - 1 && (
-                    <div className="mx-auto w-full border-b-2 border-cendy-gray-medium"></div>
+                    <div className="post-separator mx-auto"></div>
                   )}
                 </React.Fragment>
               ))}
             </div>
             
-            {/* Floating Add Button - updated design */}
+            {/* Floating Add Button - simplified design */}
             <button
               onClick={handleCreatePost}
-              className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
+              className="floating-add-button"
             >
-              <PlusCircle size={24} className="text-white" />
+              <PlusCircle size={20} className="text-white" />
             </button>
             
             {/* Empty state if no confessions match the filter */}

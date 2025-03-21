@@ -4,6 +4,7 @@ import { MessageCircle, MoreHorizontal, ThumbsUp } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import ReactionButton from "@/components/ui/reaction-button";
 import ReactionPopover, { ReactionType } from "@/components/ui/reaction-popover";
@@ -31,6 +32,7 @@ interface ForumPostProps {
   className?: string;
   topic?: string;
   fullWidth?: boolean;
+  authorId?: string;
 }
 
 const ForumPost: React.FC<ForumPostProps> = ({
@@ -46,8 +48,10 @@ const ForumPost: React.FC<ForumPostProps> = ({
   onCommentClick,
   className,
   topic,
-  fullWidth = false
+  fullWidth = false,
+  authorId
 }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
   const [userReaction, setUserReaction] = useState<ReactionType>(null);
@@ -113,6 +117,12 @@ const ForumPost: React.FC<ForumPostProps> = ({
       title: "Report Submitted",
       description: "Thank you for helping keep our community safe.",
     });
+  };
+
+  const handleAuthorClick = () => {
+    if (authorId) {
+      navigate(`/profile/${authorId}`);
+    }
   };
   
   const firstLetter = authorName.charAt(0).toUpperCase();
@@ -185,23 +195,23 @@ const ForumPost: React.FC<ForumPostProps> = ({
   return (
     <div className={cn(
       "bg-white transition-all",
-      fullWidth ? "border-b border-cendy-gray-medium" : "rounded-xl shadow-sm hover-card-effect",
+      fullWidth ? "" : "rounded-xl shadow-sm hover-card-effect",
       className
     )}>
       {/* Post Header */}
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cendy-blue/80 text-sm font-medium text-white">
+        <div className="flex items-center gap-2" onClick={handleAuthorClick}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cendy-blue/80 text-sm font-medium text-white cursor-pointer">
             {firstLetter}
           </div>
           <div>
             <div className="flex items-center gap-1">
-              <p className="text-sm font-medium text-cendy-text">{authorName}</p>
+              <p className="text-sm font-medium text-cendy-text cursor-pointer">{authorName}</p>
               <span className="text-xs text-cendy-text-secondary">• {authorSchool}</span>
             </div>
             <div className="flex items-center gap-1">
               {topic && (
-                <Badge variant="secondary" className="text-xs bg-cendy-gray-medium text-cendy-text-secondary py-0 px-1 h-4">
+                <Badge variant="secondary" className="text-xs text-cendy-blue bg-transparent py-0 px-1 h-4">
                   {topic}
                 </Badge>
               )}
@@ -219,12 +229,12 @@ const ForumPost: React.FC<ForumPostProps> = ({
       
       {/* Post Title & Content */}
       <h3 className="font-semibold text-lg mb-2 text-cendy-text">{title}</h3>
-      <div className="mb-3">
+      <div className="mb-2">
         <p className="text-cendy-text">{content}</p>
       </div>
       
-      {/* Reactions & Comments - Updated layout */}
-      <div className="flex items-center justify-between pt-2 border-t border-cendy-gray-medium">
+      {/* Reactions & Comments - without border */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           {/* Most reacted icons */}
           {topReactions.length > 0 && (
@@ -251,8 +261,8 @@ const ForumPost: React.FC<ForumPostProps> = ({
           )}
         </div>
         
-        {/* Reaction button - adjusted spacing */}
-        <div ref={likeButtonRef} className="relative">
+        {/* Reaction button - adjusted spacing to appear more centered */}
+        <div ref={likeButtonRef} className="relative ml-auto mr-2">
           <ReactionButton
             icon={getReactionIcon()}
             text={getReactionText()}

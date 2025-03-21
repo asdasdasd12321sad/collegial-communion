@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Hash, Globe, MessageSquareText, School } from 'lucide-react';
+import { MessageSquareText, School, Hash, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import ChannelCard from '@/components/home/ChannelCard';
@@ -17,28 +17,28 @@ const Home: React.FC = () => {
       id: 'confession',
       title: 'Confession',
       description: 'Share anonymously with other students',
-      icon: <Hash size={28} className="text-purple-500" />,
+      icon: <Hash size={22} className="text-purple-500" strokeWidth={2.5} />,
       path: '/confession'
     },
     {
       id: 'campus',
       title: 'Campus Community',
       description: 'Discussions about campus life and events',
-      icon: <School size={28} className="text-green-500" />,
+      icon: <School size={22} className="text-green-500" strokeWidth={2.5} />,
       path: '/campus'
     },
     {
       id: 'forum',
       title: 'Forum',
       description: 'General discussions and topics',
-      icon: <MessageSquareText size={28} className="text-cendy-blue" />,
+      icon: <MessageSquareText size={22} className="text-cendy-blue" strokeWidth={2.5} />,
       path: '/forum'
     },
     {
       id: 'nationwide',
       title: 'Nationwide Community',
       description: 'Connect with students across the country',
-      icon: <Globe size={28} className="text-amber-500" />,
+      icon: <Globe size={22} className="text-amber-500" strokeWidth={2.5} />,
       path: '/nationwide'
     }
   ]);
