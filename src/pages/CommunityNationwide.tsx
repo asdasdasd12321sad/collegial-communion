@@ -1,44 +1,48 @@
 
 import React, { useState } from 'react';
-import { Search, PlusCircle, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Search, ArrowLeft, PlusCircle, MessageCircle } from 'lucide-react';
+import Header from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import CommunityPost from '@/components/community/CommunityPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
 
-// Sample community posts - in a real app, this would come from an API
-const SAMPLE_CAMPUS_POSTS = [
+// Sample community posts for nationwide - in a real app, this would come from an API
+const SAMPLE_NATIONWIDE_POSTS = [
   {
     id: '1',
-    content: "Looking for a roommate next semester! I'm a junior studying Computer Science. DM if interested!",
-    authorName: 'Alex Thompson',
+    content: "Anyone know about good MBA programs that offer scholarships for international students?",
+    authorName: 'GlobalStudent',
     authorGender: 'Male',
+    authorUniversity: 'Stanford',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-    commentCount: 3,
+    commentCount: 7,
     hasImage: false,
-    topic: 'Housing'
+    topic: 'Education'
   },
   {
     id: '2',
-    content: "Anyone want to form a study group for Biology 101? Finals are coming up!",
-    authorName: 'Jamie Wilson',
+    content: "Trying to organize a nationwide hackathon. Looking for campus representatives from different universities. DM if interested!",
+    authorName: 'TechOrganizer',
     authorGender: 'Female',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(), // 10 hours ago
-    commentCount: 7,
+    authorUniversity: 'MIT',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+    commentCount: 12,
     hasImage: false,
-    topic: 'Study'
+    topic: 'Events'
   },
   {
     id: '3',
-    content: "Check out the sunset from my dorm window! Campus looks amazing today.",
-    authorName: 'Riley Evans',
+    content: "Just got back from the National Student Leadership Conference in DC. Amazing experience! Here are some photos from the event.",
+    authorName: 'LeadershipEnthusiast',
     authorGender: 'Non-binary',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-    commentCount: 15,
+    authorUniversity: 'Georgetown',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 7 days ago
+    commentCount: 23,
     hasImage: true,
-    imageUrl: "https://images.unsplash.com/photo-1472213984618-c79aaec300c1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    topic: 'Campus'
+    imageUrl: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    topic: 'Student Life'
   }
 ];
 
@@ -51,24 +55,22 @@ const SORT_OPTIONS = [
 // Define topic filter options
 const TOPIC_FILTERS = [
   { id: 'all', label: 'All Categories' },
-  { id: 'male', label: 'Male' },
-  { id: 'female', label: 'Female' },
-  { id: 'l', label: 'L' },
-  { id: 'g', label: 'G' },
-  { id: 'b', label: 'B' },
-  { id: 't', label: 'T' },
+  { id: 'education', label: 'Education' },
+  { id: 'events', label: 'Events' },
+  { id: 'sports', label: 'Sports' },
+  { id: 'studentLife', label: 'Student Life' },
+  { id: 'career', label: 'Career' },
   { id: 'housing', label: 'Housing' },
-  { id: 'study', label: 'Study' },
-  { id: 'campus', label: 'Campus' },
+  { id: 'travel', label: 'Travel' },
 ];
 
-const CampusCommunity: React.FC = () => {
+const CommunityNationwide: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
   const [sortOption, setSortOption] = useState('hot');
   const [topicFilter, setTopicFilter] = useState('all');
-  const [posts, setPosts] = useState(SAMPLE_CAMPUS_POSTS);
+  const [posts, setPosts] = useState(SAMPLE_NATIONWIDE_POSTS);
   
   const handleCreatePost = () => {
     if (!isVerified) {
@@ -97,7 +99,6 @@ const CampusCommunity: React.FC = () => {
       return;
     }
     
-    // For this demo, we'll just show a toast notification
     toast({
       title: "Open Chat",
       description: `Starting chat with ${authorName}`,
@@ -105,7 +106,6 @@ const CampusCommunity: React.FC = () => {
   };
   
   const handleOpenComments = (postId: string) => {
-    // For this demo, we'll just show a toast notification
     toast({
       title: "Open Comments",
       description: `Opening comments for post ${postId}`,
@@ -113,7 +113,7 @@ const CampusCommunity: React.FC = () => {
   };
   
   const handleSearchClick = () => {
-    navigate('/campus/search');
+    navigate('/nationwide/search');
   };
   
   const handleBackClick = () => {
@@ -154,7 +154,7 @@ const CampusCommunity: React.FC = () => {
           <button onClick={handleBackClick} className="flex items-center text-cendy-text">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold text-cendy-text text-center flex-1">Campus Community</h1>
+          <h1 className="text-xl font-bold text-cendy-text text-center flex-1">Community</h1>
           <button onClick={handleSearchClick} className="text-cendy-text">
             <Search size={20} />
           </button>
@@ -199,6 +199,7 @@ const CampusCommunity: React.FC = () => {
               content={post.content}
               authorName={post.authorName}
               authorGender={post.authorGender}
+              authorUniversity={post.authorUniversity}
               createdAt={formatTimestamp(post.createdAt)}
               commentCount={post.commentCount}
               imageUrl={post.hasImage ? post.imageUrl : undefined}
@@ -230,4 +231,4 @@ const CampusCommunity: React.FC = () => {
   );
 };
 
-export default CampusCommunity;
+export default CommunityNationwide;

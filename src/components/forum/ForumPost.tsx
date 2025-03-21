@@ -2,9 +2,8 @@
 import React, { useState, useRef } from 'react';
 import { MessageCircle, Flag, ThumbsUp } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import ReactionButton from "@/components/ui/reaction-button";
 import ReactionPopover, { ReactionType } from "@/components/ui/reaction-popover";
@@ -30,6 +29,8 @@ interface ForumPostProps {
   onReactionClick: (reactionType: string) => void;
   onCommentClick: () => void;
   className?: string;
+  topic?: string;
+  fullWidth?: boolean;
 }
 
 const ForumPost: React.FC<ForumPostProps> = ({
@@ -43,7 +44,9 @@ const ForumPost: React.FC<ForumPostProps> = ({
   tags,
   onReactionClick,
   onCommentClick,
-  className
+  className,
+  topic,
+  fullWidth = false
 }) => {
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
@@ -112,7 +115,6 @@ const ForumPost: React.FC<ForumPostProps> = ({
     });
   };
   
-  const formattedTime = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
   const firstLetter = authorName.charAt(0).toUpperCase();
   
   const getReactionIcon = () => {
@@ -182,7 +184,8 @@ const ForumPost: React.FC<ForumPostProps> = ({
   
   return (
     <div className={cn(
-      "bg-white rounded-xl p-4 shadow-sm transition-all hover-card-effect",
+      "bg-white transition-all",
+      fullWidth ? "border-b border-cendy-gray-medium" : "rounded-xl shadow-sm hover-card-effect",
       className
     )}>
       {/* Post Header */}
@@ -196,7 +199,14 @@ const ForumPost: React.FC<ForumPostProps> = ({
               <p className="text-sm font-medium text-cendy-text">{authorName}</p>
               <span className="text-xs text-cendy-text-secondary">• {authorSchool}</span>
             </div>
-            <p className="text-xs text-cendy-text-secondary">{formattedTime}</p>
+            <div className="flex items-center gap-1">
+              {topic && (
+                <Badge variant="secondary" className="text-xs bg-cendy-gray text-cendy-text-secondary py-0 px-1 h-4">
+                  {topic}
+                </Badge>
+              )}
+              <p className="text-xs text-cendy-text-secondary">{createdAt}</p>
+            </div>
           </div>
         </div>
         <button 

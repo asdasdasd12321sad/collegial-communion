@@ -9,6 +9,11 @@ import Settings from '@/pages/Settings';
 import Confession from '@/pages/Confession';
 import Forum from '@/pages/Forum';
 import CampusCommunity from '@/pages/CampusCommunity';
+import CommunityNationwide from '@/pages/CommunityNationwide';
+import ConfessionSearch from '@/pages/ConfessionSearch';
+import ForumSearch from '@/pages/ForumSearch';
+import CampusCommunitySearch from '@/pages/CampusCommunitySearch';
+import CommunityNationwideSearch from '@/pages/CommunityNationwideSearch';
 import DisplayNameForm from '@/components/auth/DisplayNameForm';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import LoadingScreen from '@/components/common/LoadingScreen';
@@ -43,8 +48,13 @@ const Routes: React.FC = () => {
         <Route path="/messages" element={<Messages />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/confession" element={<Confession />} />
+        <Route path="/confession/search" element={<ConfessionSearch />} />
         <Route path="/forum" element={<Forum />} />
+        <Route path="/forum/search" element={<ForumSearch />} />
         <Route path="/campus" element={<CampusCommunity />} />
+        <Route path="/campus/search" element={<CampusCommunitySearch />} />
+        <Route path="/nationwide" element={<CommunityNationwide />} />
+        <Route path="/nationwide/search" element={<CommunityNationwideSearch />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </RouterRoutes>
       <BottomNavigation />

@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import { Search, PlusCircle } from 'lucide-react';
-import Header from '@/components/layout/Header';
+import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import ForumPost from '@/components/forum/ForumPost';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useNavigate } from 'react-router-dom';
 
 // Sample forum posts data - in a real app, this would come from an API
 const SAMPLE_FORUM_POSTS = [
@@ -18,7 +18,8 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
     reactions: { like: 15, heart: 7, laugh: 0, wow: 2, sad: 0, angry: 0 },
     commentCount: 12,
-    tags: ['study', 'campus']
+    tags: ['study', 'campus'],
+    topic: 'Campus'
   },
   {
     id: '2',
@@ -29,7 +30,8 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
     reactions: { like: 8, heart: 3, laugh: 2, wow: 1, sad: 5, angry: 0 },
     commentCount: 7,
-    tags: ['study', 'cs', 'classes']
+    tags: ['study', 'cs', 'classes'],
+    topic: 'Classes'
   },
   {
     id: '3',
@@ -40,27 +42,36 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(), // 36 hours ago
     reactions: { like: 27, heart: 15, laugh: 0, wow: 8, sad: 0, angry: 0 },
     commentCount: 18,
-    tags: ['food', 'fun']
+    tags: ['food', 'fun'],
+    topic: 'Food'
   }
 ];
 
-// Define filter categories
-const FILTER_CATEGORIES = [
+// Define sort options
+const SORT_OPTIONS = [
   { id: 'hot', label: 'Hot' },
   { id: 'new', label: 'New' },
+];
+
+// Define topic filter options
+const TOPIC_FILTERS = [
+  { id: 'all', label: 'All Categories' },
   { id: 'study', label: 'Study' },
   { id: 'fun', label: 'Fun' },
   { id: 'drama', label: 'Drama' },
   { id: 'food', label: 'Food' },
   { id: 'career', label: 'Career' },
+  { id: 'classes', label: 'Classes' },
+  { id: 'campus', label: 'Campus' },
 ];
 
 const Forum: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
-  const [activeFilter, setActiveFilter] = useState('hot');
+  const [sortOption, setSortOption] = useState('hot');
+  const [topicFilter, setTopicFilter] = useState('all');
   const [posts, setPosts] = useState(SAMPLE_FORUM_POSTS);
-  const [searchQuery, setSearchQuery] = useState('');
   
   const handleCreatePost = () => {
     if (!isVerified) {
@@ -110,61 +121,103 @@ const Forum: React.FC = () => {
     });
   };
   
-  const filteredPosts = posts.filter(post => 
-    post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    post.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSearchClick = () => {
+    navigate('/forum/search');
+  };
+  
+  const handleBackClick = () => {
+    navigate(-1);
+  };
+  
+  // Format timestamp
+  const formatTimestamp = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 30) {
+      return date.toLocaleDateString();
+    } else if (diffDays >= 1) {
+      return `${diffDays}d`;
+    } else {
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      if (diffHours >= 1) {
+        return `${diffHours}h`;
+      } else {
+        const diffMinutes = Math.floor(diffTime / (1000 * 60));
+        if (diffMinutes >= 1) {
+          return `${diffMinutes}m`;
+        } else {
+          const diffSeconds = Math.floor(diffTime / 1000);
+          return `${diffSeconds}s`;
+        }
+      }
+    }
+  };
   
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <Header title="Forum" />
-      
-      <main className="flex-1 p-4">
-        {/* Search Bar */}
-        <div className="mb-4 relative animate-fade-in">
-          <input
-            type="text"
-            placeholder="Search forum posts..."
-            className="w-full rounded-xl border border-cendy-gray-medium bg-white px-4 py-3 pl-10 focus:border-cendy-blue focus:outline-none focus:ring-1 focus:ring-cendy-blue"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Search className="absolute left-3 top-3.5 text-cendy-text-secondary" size={20} />
+      <div className="sticky top-0 z-10 border-b border-cendy-gray-medium bg-white/80 backdrop-blur-md">
+        <div className="flex h-16 items-center justify-between px-4">
+          <button onClick={handleBackClick} className="flex items-center text-cendy-text">
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold text-cendy-text text-center flex-1">Forum</h1>
+          <button onClick={handleSearchClick} className="text-cendy-text">
+            <Search size={20} />
+          </button>
         </div>
         
-        {/* Filter Categories */}
-        <div className="mb-4 overflow-x-auto">
-          <Tabs defaultValue="hot" className="w-full" value={activeFilter} onValueChange={setActiveFilter}>
-            <TabsList className="h-10 p-1 bg-transparent w-max space-x-1">
-              {FILTER_CATEGORIES.map((category) => (
-                <TabsTrigger
-                  key={category.id}
-                  value={category.id}
-                  className="text-sm px-3 py-1.5 data-[state=active]:bg-white data-[state=active]:text-cendy-blue"
-                >
-                  {category.label}
-                </TabsTrigger>
+        {/* Filter Options */}
+        <div className="flex p-2 gap-2">
+          <Select value={sortOption} onValueChange={setSortOption}>
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-10 px-4 py-2">
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {option.label}
+                </SelectItem>
               ))}
-            </TabsList>
-          </Tabs>
+            </SelectContent>
+          </Select>
+          
+          <Select value={topicFilter} onValueChange={setTopicFilter}>
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-10 px-4 py-2">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              {TOPIC_FILTERS.map((filter) => (
+                <SelectItem key={filter.id} value={filter.id}>
+                  {filter.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        
+      </div>
+      
+      <main className="flex-1 p-0">
         {/* Forum Posts */}
-        <div className="space-y-4">
-          {filteredPosts.map((post, index) => (
+        <div className="space-y-2">
+          {posts.map((post, index) => (
             <ForumPost
               key={post.id}
               title={post.title}
               content={post.content}
               authorName={post.authorName}
               authorSchool={post.authorSchool}
-              createdAt={post.createdAt}
+              createdAt={formatTimestamp(post.createdAt)}
               reactions={post.reactions}
               commentCount={post.commentCount}
               tags={post.tags}
               onReactionClick={(reactionType) => handleReactionClick(post.id, reactionType)}
               onCommentClick={() => handleOpenComments(post.id)}
-              className={`animate-fade-in [animation-delay:${index * 100}ms]`}
+              className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
+              topic={post.topic}
+              fullWidth={true}
             />
           ))}
         </div>
@@ -178,7 +231,7 @@ const Forum: React.FC = () => {
         </button>
         
         {/* Empty state if no posts match the filter */}
-        {filteredPosts.length === 0 && (
+        {posts.length === 0 && (
           <div className="mt-8 text-center">
             <p className="text-cendy-text-secondary">No forum posts found. Be the first to start a discussion!</p>
           </div>

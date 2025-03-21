@@ -2,32 +2,38 @@
 import React from 'react';
 import { MessageCircle, Flag, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 interface CommunityPostProps {
   content: string;
   authorName: string;
   authorGender: string;
+  authorUniversity?: string;
   createdAt: string;
   commentCount: number;
   imageUrl?: string;
   onChatClick: () => void;
   onCommentClick: () => void;
   className?: string;
+  topic?: string;
+  fullWidth?: boolean;
 }
 
 const CommunityPost: React.FC<CommunityPostProps> = ({
   content,
   authorName,
   authorGender,
+  authorUniversity,
   createdAt,
   commentCount,
   imageUrl,
   onChatClick,
   onCommentClick,
-  className
+  className,
+  topic,
+  fullWidth = false
 }) => {
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
@@ -51,12 +57,12 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
     });
   };
   
-  const formattedTime = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
   const firstLetter = authorName.charAt(0).toUpperCase();
   
   return (
     <div className={cn(
-      "bg-white rounded-xl p-4 shadow-sm transition-all hover-card-effect",
+      "bg-white transition-all",
+      fullWidth ? "border-b border-cendy-gray-medium" : "rounded-xl shadow-sm hover-card-effect",
       className
     )}>
       {/* Post Header */}
@@ -69,8 +75,16 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
             <div className="flex items-center gap-1">
               <p className="text-sm font-medium text-cendy-text">{authorName}</p>
               <span className="text-xs text-cendy-text-secondary">• {authorGender}</span>
+              {authorUniversity && <span className="text-xs text-cendy-text-secondary">• {authorUniversity}</span>}
             </div>
-            <p className="text-xs text-cendy-text-secondary">{formattedTime}</p>
+            <div className="flex items-center gap-1">
+              {topic && (
+                <Badge variant="secondary" className="text-xs bg-cendy-gray text-cendy-text-secondary py-0 px-1 h-4">
+                  {topic}
+                </Badge>
+              )}
+              <p className="text-xs text-cendy-text-secondary">{createdAt}</p>
+            </div>
           </div>
         </div>
         <button 
