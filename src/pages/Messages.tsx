@@ -12,7 +12,6 @@ const Messages: React.FC = () => {
   
   const handleSearchClick = () => {
     // Navigate to message search page
-    // This would be implemented in a real app
     navigate('/messages/search');
   };
   

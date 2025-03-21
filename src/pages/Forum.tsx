@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
+import { Search, PlusCircle, ArrowLeft, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import ForumPost from '@/components/forum/ForumPost';
@@ -18,7 +18,6 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
     reactions: { like: 15, heart: 7, laugh: 0, wow: 2, sad: 0, angry: 0 },
     commentCount: 12,
-    tags: [],
     topic: 'Campus'
   },
   {
@@ -30,7 +29,6 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
     reactions: { like: 8, heart: 3, laugh: 2, wow: 1, sad: 5, angry: 0 },
     commentCount: 7,
-    tags: [],
     topic: 'Classes'
   },
   {
@@ -42,18 +40,17 @@ const SAMPLE_FORUM_POSTS = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(), // 36 hours ago
     reactions: { like: 27, heart: 15, laugh: 0, wow: 8, sad: 0, angry: 0 },
     commentCount: 18,
-    tags: [],
     topic: 'Food'
   }
 ];
 
-// Define sort options
+// Define sort options - improved appearance
 const SORT_OPTIONS = [
   { id: 'hot', label: 'Hot' },
   { id: 'new', label: 'New' },
 ];
 
-// Define topic filter options
+// Define topic filter options - improved appearance
 const TOPIC_FILTERS = [
   { id: 'all', label: 'All Categories' },
   { id: 'study', label: 'Study' },
@@ -169,7 +166,7 @@ const Forum: React.FC = () => {
           </button>
         </div>
         
-        {/* Filter Options */}
+        {/* Filter Options - improved appearance and moved up */}
         <div className="flex pt-0 pb-2 px-4 gap-2">
           <Select value={sortOption} onValueChange={setSortOption}>
             <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
@@ -203,34 +200,33 @@ const Forum: React.FC = () => {
         {/* Forum Posts */}
         <div className="space-y-0">
           {posts.map((post, index) => (
-            <ForumPost
-              key={post.id}
-              title={post.title}
-              content={post.content}
-              authorName={post.authorName}
-              authorSchool={post.authorSchool}
-              createdAt={formatTimestamp(post.createdAt)}
-              reactions={post.reactions}
-              commentCount={post.commentCount}
-              tags={post.tags}
-              onReactionClick={(reactionType) => handleReactionClick(post.id, reactionType)}
-              onCommentClick={() => handleOpenComments(post.id)}
-              className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
-              topic={post.topic}
-              fullWidth={true}
-            />
+            <React.Fragment key={post.id}>
+              <ForumPost
+                title={post.title}
+                content={post.content}
+                authorName={post.authorName}
+                authorSchool={post.authorSchool}
+                createdAt={formatTimestamp(post.createdAt)}
+                reactions={post.reactions}
+                commentCount={post.commentCount}
+                tags={[]}
+                onReactionClick={(reactionType) => handleReactionClick(post.id, reactionType)}
+                onCommentClick={() => handleOpenComments(post.id)}
+                className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
+                topic={post.topic}
+                fullWidth={true}
+              />
+              {index < posts.length - 1 && (
+                <div className="mx-auto w-full border-b-2 border-cendy-gray-medium"></div>
+              )}
+            </React.Fragment>
           ))}
         </div>
         
-        {/* Floating Add Button */}
+        {/* Floating Add Button - updated design */}
         <button
           onClick={handleCreatePost}
           className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
-          style={{
-            backgroundImage: 'url(lovable-uploads/5b26616e-0e45-435e-b3fd-673d02bc994b.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
         >
           <PlusCircle size={24} className="text-white" />
         </button>

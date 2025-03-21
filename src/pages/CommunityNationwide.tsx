@@ -14,7 +14,6 @@ const SAMPLE_NATIONWIDE_POSTS = [
     title: 'MBA Scholarships for International Students',
     content: "Anyone know about good MBA programs that offer scholarships for international students?",
     authorName: 'GlobalStudent',
-    authorGender: 'Male',
     authorUniversity: 'Stanford',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
     commentCount: 7,
@@ -26,7 +25,6 @@ const SAMPLE_NATIONWIDE_POSTS = [
     title: 'Nationwide Hackathon',
     content: "Trying to organize a nationwide hackathon. Looking for campus representatives from different universities. DM if interested!",
     authorName: 'TechOrganizer',
-    authorGender: 'Female',
     authorUniversity: 'MIT',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
     commentCount: 12,
@@ -38,7 +36,6 @@ const SAMPLE_NATIONWIDE_POSTS = [
     title: 'National Leadership Conference',
     content: "Just got back from the National Student Leadership Conference in DC. Amazing experience! Here are some photos from the event.",
     authorName: 'LeadershipEnthusiast',
-    authorGender: 'Non-binary',
     authorUniversity: 'Georgetown',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 7 days ago
     commentCount: 23,
@@ -148,10 +145,10 @@ const CommunityNationwide: React.FC = () => {
           </button>
         </div>
         
-        {/* Filter Options */}
+        {/* Filter Options - moved up closer to headline */}
         <div className="flex pt-0 pb-2 px-4">
-          <Select value={topicFilter} onValueChange={setTopicFilter} className="w-full">
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
+          <Select value={topicFilter} onValueChange={setTopicFilter}>
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -169,33 +166,32 @@ const CommunityNationwide: React.FC = () => {
         {/* Community Posts */}
         <div className="space-y-0">
           {posts.map((post, index) => (
-            <CommunityPost
-              key={post.id}
-              title={post.title}
-              content={post.content}
-              authorName={post.authorName}
-              authorGender={post.authorGender}
-              authorUniversity={post.authorUniversity}
-              createdAt={formatTimestamp(post.createdAt)}
-              commentCount={0}
-              imageUrl={post.hasImage ? post.imageUrl : undefined}
-              onPostClick={() => handleOpenPost(post.authorName, post.id)}
-              className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
-              topic={post.topic}
-              fullWidth={true}
-            />
+            <React.Fragment key={post.id}>
+              <CommunityPost
+                key={post.id}
+                title={post.title}
+                content={post.content}
+                authorName={post.authorName}
+                authorUniversity={post.authorUniversity}
+                createdAt={formatTimestamp(post.createdAt)}
+                commentCount={0}
+                imageUrl={post.hasImage ? post.imageUrl : undefined}
+                onPostClick={() => handleOpenPost(post.authorName, post.id)}
+                className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
+                topic={post.topic}
+                fullWidth={true}
+              />
+              {index < posts.length - 1 && (
+                <div className="mx-auto w-full border-b-2 border-cendy-gray-medium"></div>
+              )}
+            </React.Fragment>
           ))}
         </div>
         
-        {/* Floating Add Button */}
+        {/* Floating Add Button - updated design */}
         <button
           onClick={handleCreatePost}
           className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
-          style={{
-            backgroundImage: 'url(lovable-uploads/5b26616e-0e45-435e-b3fd-673d02bc994b.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
         >
           <PlusCircle size={24} className="text-white" />
         </button>

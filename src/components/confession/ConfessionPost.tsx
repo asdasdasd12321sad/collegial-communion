@@ -194,7 +194,7 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
             </p>
             <div className="flex items-center gap-1">
               {topic && (
-                <Badge variant="secondary" className="text-xs bg-cendy-gray text-cendy-text-secondary py-0 px-1 h-4">
+                <Badge variant="secondary" className="text-xs bg-cendy-gray-medium text-cendy-text-secondary py-0 px-1 h-4">
                   {topic}
                 </Badge>
               )}
@@ -216,12 +216,12 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
         <p className="text-cendy-text">{content}</p>
       </div>
       
-      {/* Reactions & Comments */}
+      {/* Reactions & Comments - Updated layout */}
       <div className="flex items-center justify-between pt-2 border-t border-cendy-gray-medium">
-        {/* Reaction count & icons */}
-        <div className="flex items-center">
+        <div className="flex items-center space-x-2">
+          {/* Most reacted icons */}
           {topReactions.length > 0 && (
-            <div className="flex items-center mr-2">
+            <div className="flex items-center">
               <div className="flex">
                 {topReactions.map(([type, _], index) => (
                   <span key={type} className="text-sm" style={{ marginLeft: index > 0 ? '-2px' : '0' }}>
@@ -235,18 +235,16 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
             </div>
           )}
           
-          {/* Comment count */}
+          {/* Comment count with icon */}
           {commentCount > 0 && (
-            <button 
-              onClick={onCommentClick}
-              className="flex items-center text-cendy-text-secondary text-xs"
-            >
-              <span>{commentCount} comments</span>
-            </button>
+            <div className="flex items-center text-cendy-text-secondary ml-3">
+              <MessageCircle size={14} className="mr-1" />
+              <span className="text-xs">{commentCount}</span>
+            </div>
           )}
         </div>
         
-        {/* Reaction button */}
+        {/* Reaction button - adjusted spacing */}
         <div ref={likeButtonRef} className="relative">
           <ReactionButton
             icon={getReactionIcon()}

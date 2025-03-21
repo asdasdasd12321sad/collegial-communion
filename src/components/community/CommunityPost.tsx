@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -10,7 +10,7 @@ interface CommunityPostProps {
   title?: string;
   content: string;
   authorName: string;
-  authorGender: string;
+  authorGender?: string; // Made optional
   authorUniversity?: string;
   createdAt: string;
   commentCount: number;
@@ -77,12 +77,12 @@ const CommunityPost: React.FC<CommunityPostProps> = ({
           <div>
             <div className="flex items-center gap-1">
               <p className="text-sm font-medium text-cendy-text">{authorName}</p>
-              <span className="text-xs text-cendy-text-secondary">• {authorGender}</span>
               {authorUniversity && <span className="text-xs text-cendy-text-secondary">• {authorUniversity}</span>}
+              {authorGender && <span className="text-xs text-cendy-text-secondary">• {authorGender}</span>}
             </div>
             <div className="flex items-center gap-1">
               {topic && (
-                <Badge variant="secondary" className="text-xs bg-cendy-gray text-cendy-text-secondary py-0 px-1 h-4">
+                <Badge variant="secondary" className="text-xs bg-cendy-gray-medium text-cendy-text-secondary py-0 px-1 h-4">
                   {topic}
                 </Badge>
               )}

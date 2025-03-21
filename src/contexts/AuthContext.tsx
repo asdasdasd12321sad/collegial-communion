@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
@@ -9,6 +8,7 @@ interface User {
   email: string;
   displayName: string;
   verificationStatus: UserVerificationStatus;
+  university: string | null;
 }
 
 interface AuthContextType {
@@ -59,6 +59,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return ALLOWED_DOMAINS.some(domain => email.toLowerCase().endsWith(domain));
   };
 
+  // Helper to extract university from email
+  const extractUniversityFromEmail = (email: string): string | null => {
+    // Extract the domain from the email
+    const domainMatch = email.match(/@([^.]+)/);
+    if (!domainMatch) return null;
+    
+    const domain = domainMatch[1].toLowerCase();
+    
+    // Map domain to university name (simplified example)
+    const universityMap: Record<string, string> = {
+      'harvard': 'Harvard University',
+      'stanford': 'Stanford University',
+      'mit': 'MIT',
+      'princeton': 'Princeton University',
+      'berkeley': 'UC Berkeley',
+      'yale': 'Yale University',
+      'columbia': 'Columbia University',
+      'cornell': 'Cornell University',
+      'upenn': 'UPenn',
+      'college': 'Sample College',
+      'university': 'Sample University',
+      'student': 'Sample School'
+    };
+    
+    return universityMap[domain] || 'Unknown University';
+  };
+
   // Google login
   const loginWithGoogle = async (): Promise<void> => {
     setIsLoading(true);
@@ -69,16 +96,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Simulate a returned email and ID
-      const mockEmail = 'student@college.edu';
+      const mockEmail = 'student@harvard.edu';
       const mockUserId = 'google-' + Math.random().toString(36).substring(2, 10);
       
       if (isAllowedDomain(mockEmail)) {
+        // Detect university from email
+        const university = extractUniversityFromEmail(mockEmail);
+        
         // Create a verified user without display name yet
         const newUser: User = {
           id: mockUserId,
           email: mockEmail,
           displayName: '',
           verificationStatus: 'verified',
+          university: university || 'Unknown University'
         };
         
         setUser(newUser);
@@ -111,16 +142,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Simulate a returned email and ID
-      const mockEmail = 'student@university.edu';
+      const mockEmail = 'student@stanford.edu';
       const mockUserId = 'microsoft-' + Math.random().toString(36).substring(2, 10);
       
       if (isAllowedDomain(mockEmail)) {
+        // Detect university from email
+        const university = extractUniversityFromEmail(mockEmail);
+        
         // Create a verified user without display name yet
         const newUser: User = {
           id: mockUserId,
           email: mockEmail,
           displayName: '',
           verificationStatus: 'verified',
+          university: university || 'Unknown University'
         };
         
         setUser(newUser);
@@ -161,6 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: 'private@apple.com', // Apple often provides private relay emails
         displayName: mockName,
         verificationStatus: 'unverified',
+        university: null
       };
       
       setUser(newUser);
@@ -192,15 +228,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Email and password are required");
       }
       
-      // For email login, we always create unverified users
+      // Check if it's a university email
+      const isUniversityEmail = isAllowedDomain(email);
+      
+      // For email login, verify status based on email domain
       const mockUserId = 'email-' + Math.random().toString(36).substring(2, 10);
       const randomName = 'User' + Math.floor(Math.random() * 10000);
+      
+      // Detect university from email if it's a university email
+      const university = isUniversityEmail ? extractUniversityFromEmail(email) : null;
       
       const newUser: User = {
         id: mockUserId,
         email: email,
         displayName: randomName,
-        verificationStatus: 'unverified',
+        verificationStatus: isUniversityEmail ? 'verified' : 'unverified',
+        university: university
       };
       
       setUser(newUser);

@@ -85,6 +85,11 @@ const Home: React.FC = () => {
               ? '✓ You are a verified user with full access.' 
               : 'You are currently unverified. Sign in with your college email to get full access.'}
           </p>
+          {isVerified && user?.university && (
+            <p className="text-sm text-green-700 mt-1">
+              School: {user.university}
+            </p>
+          )}
         </div>
       </main>
     </div>

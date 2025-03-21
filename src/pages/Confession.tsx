@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
+import { Search, PlusCircle, ArrowLeft, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import ConfessionPost from '@/components/confession/ConfessionPost';
@@ -41,13 +41,13 @@ const SAMPLE_CONFESSIONS = [
   }
 ];
 
-// Define sort options
+// Define sort options - improved appearance
 const SORT_OPTIONS = [
   { id: 'hot', label: 'Hot' },
   { id: 'new', label: 'New' },
 ];
 
-// Define topic filter options
+// Define topic filter options - improved appearance
 const TOPIC_FILTERS = [
   { id: 'all', label: 'All Categories' },
   { id: 'study', label: 'Study' },
@@ -66,6 +66,9 @@ const Confession: React.FC = () => {
   const [sortOption, setSortOption] = useState('hot');
   const [topicFilter, setTopicFilter] = useState('all');
   const [confessions, setConfessions] = useState(SAMPLE_CONFESSIONS);
+  
+  // Check if the user is allowed to access content based on university verification
+  const isSchoolVerified = isVerified && user?.university !== null;
   
   const handleCreatePost = () => {
     if (!isVerified) {
@@ -163,7 +166,7 @@ const Confession: React.FC = () => {
           </button>
         </div>
         
-        {/* Filter Options */}
+        {/* Filter Options - improved appearance and moved up */}
         <div className="flex pt-0 pb-2 px-4 gap-2">
           <Select value={sortOption} onValueChange={setSortOption}>
             <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
@@ -194,44 +197,56 @@ const Confession: React.FC = () => {
       </div>
       
       <main className="flex-1 p-0">
-        {/* Confession Posts */}
-        <div className="space-y-0">
-          {confessions.map((confession, index) => (
-            <ConfessionPost
-              key={confession.id}
-              title={confession.title}
-              content={confession.content}
-              createdAt={formatTimestamp(confession.createdAt)}
-              reactions={confession.reactions}
-              commentCount={confession.commentCount}
-              anonymous={confession.anonymous}
-              topic={confession.topic}
-              onReactionClick={(reactionType) => handleReactionClick(confession.id, reactionType)}
-              onCommentClick={() => handleOpenComments(confession.id)}
-              className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
-              fullWidth={true}
-            />
-          ))}
-        </div>
-        
-        {/* Floating Add Button */}
-        <button
-          onClick={handleCreatePost}
-          className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
-          style={{
-            backgroundImage: 'url(lovable-uploads/5b26616e-0e45-435e-b3fd-673d02bc994b.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
-        >
-          <PlusCircle size={24} className="text-white" />
-        </button>
-        
-        {/* Empty state if no confessions match the filter */}
-        {confessions.length === 0 && (
-          <div className="mt-8 text-center">
-            <p className="text-cendy-text-secondary">No confessions found. Be the first to share!</p>
+        {!isSchoolVerified ? (
+          <div className="mt-8 p-4 text-center">
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <h3 className="mb-2 text-lg font-medium text-cendy-text">Verification Required</h3>
+              <p className="text-sm text-cendy-text-secondary">
+                You need to verify with your university email to view confessions from your school.
+              </p>
+            </div>
           </div>
+        ) : (
+          <>
+            {/* Confession Posts */}
+            <div className="space-y-0">
+              {confessions.map((confession, index) => (
+                <React.Fragment key={confession.id}>
+                  <ConfessionPost
+                    title={confession.title}
+                    content={confession.content}
+                    createdAt={formatTimestamp(confession.createdAt)}
+                    reactions={confession.reactions}
+                    commentCount={confession.commentCount}
+                    anonymous={confession.anonymous}
+                    topic={confession.topic}
+                    onReactionClick={(reactionType) => handleReactionClick(confession.id, reactionType)}
+                    onCommentClick={() => handleOpenComments(confession.id)}
+                    className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
+                    fullWidth={true}
+                  />
+                  {index < confessions.length - 1 && (
+                    <div className="mx-auto w-full border-b-2 border-cendy-gray-medium"></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+            
+            {/* Floating Add Button - updated design */}
+            <button
+              onClick={handleCreatePost}
+              className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
+            >
+              <PlusCircle size={24} className="text-white" />
+            </button>
+            
+            {/* Empty state if no confessions match the filter */}
+            {confessions.length === 0 && (
+              <div className="mt-8 text-center">
+                <p className="text-cendy-text-secondary">No confessions found. Be the first to share!</p>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

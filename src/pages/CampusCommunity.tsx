@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -147,10 +148,10 @@ const CampusCommunity: React.FC = () => {
           </button>
         </div>
         
-        {/* Filter Options */}
+        {/* Filter Options - moved up closer to headline */}
         <div className="flex pt-0 pb-2 px-4">
-          <Select value={topicFilter} onValueChange={setTopicFilter} className="w-full">
-            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
+          <Select value={topicFilter} onValueChange={setTopicFilter}>
+            <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -168,32 +169,31 @@ const CampusCommunity: React.FC = () => {
         {/* Community Posts */}
         <div className="space-y-0">
           {posts.map((post, index) => (
-            <CommunityPost
-              key={post.id}
-              title={post.title}
-              content={post.content}
-              authorName={post.authorName}
-              authorGender={post.authorGender}
-              createdAt={formatTimestamp(post.createdAt)}
-              commentCount={0}
-              imageUrl={post.hasImage ? post.imageUrl : undefined}
-              onPostClick={() => handleOpenPost(post.authorName, post.id)}
-              className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
-              topic={post.topic}
-              fullWidth={true}
-            />
+            <React.Fragment key={post.id}>
+              <CommunityPost
+                title={post.title}
+                content={post.content}
+                authorName={post.authorName}
+                authorGender={post.authorGender}
+                createdAt={formatTimestamp(post.createdAt)}
+                commentCount={0}
+                imageUrl={post.hasImage ? post.imageUrl : undefined}
+                onPostClick={() => handleOpenPost(post.authorName, post.id)}
+                className="border-b border-cendy-gray-medium rounded-none px-4 py-3"
+                topic={post.topic}
+                fullWidth={true}
+              />
+              {index < posts.length - 1 && (
+                <div className="mx-auto w-full border-b-2 border-cendy-gray-medium"></div>
+              )}
+            </React.Fragment>
           ))}
         </div>
         
-        {/* Floating Add Button */}
+        {/* Floating Add Button - updated design */}
         <button
           onClick={handleCreatePost}
           className="fixed bottom-24 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-cendy-blue text-white shadow-lg"
-          style={{
-            backgroundImage: 'url(lovable-uploads/5b26616e-0e45-435e-b3fd-673d02bc994b.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
         >
           <PlusCircle size={24} className="text-white" />
         </button>
