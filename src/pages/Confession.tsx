@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, PlusCircle, ArrowLeft, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -8,56 +8,51 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 
-// Sample confession data - in a real app, this would come from an API
-const SAMPLE_CONFESSIONS = [
+// Sample confession posts data - in a real app, this would come from an API
+const SAMPLE_CONFESSION_POSTS = [
   {
     id: '1',
-    title: 'Failing Calculus',
-    content: "I've been pretending to understand calculus all semester. Finals are next week. Help!",
+    content: "I've been pretending to understand quantum physics in my advanced physics class for the entire semester.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-    reactions: { like: 24, heart: 8, laugh: 13, wow: 5, sad: 5, angry: 0 },
-    commentCount: 8,
+    reactions: { like: 25, heart: 12, laugh: 30, wow: 8, sad: 3, angry: 0 },
+    commentCount: 15,
     anonymous: false,
-    topic: 'Study'
+    topic: 'Classes'
   },
   {
     id: '2',
-    title: 'Classroom Embarrassment',
-    content: "I accidentally called my professor 'mom' during office hours today.",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-    reactions: { like: 56, heart: 32, laugh: 42, wow: 12, sad: 2, angry: 0 },
-    commentCount: 15,
+    content: "I accidentally called my professor 'mom' during a lecture and now I'm considering dropping the class.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 15).toISOString(), // 15 hours ago
+    reactions: { like: 87, heart: 20, laugh: 156, wow: 12, sad: 5, angry: 0 },
+    commentCount: 42,
     anonymous: false,
-    topic: 'Awkward'
+    topic: 'Embarrassing'
   },
   {
     id: '3',
-    title: 'Ramen Life',
-    content: "I've been eating ramen for 14 days straight because I spent my meal plan money on concert tickets. Worth it though!",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-    reactions: { like: 34, heart: 18, laugh: 12, wow: 3, sad: 20, angry: 0 },
-    commentCount: 5,
+    content: "I've been eating ramen for three weeks straight because I spent all my money on concert tickets.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
+    reactions: { like: 45, heart: 8, laugh: 15, wow: 3, sad: 28, angry: 0 },
+    commentCount: 23,
     anonymous: false,
-    topic: 'Food'
+    topic: 'Money'
   }
 ];
 
-// Define sort options with icons
+// Define sort options with icons - fixed duplicate icons issue
 const SORT_OPTIONS = [
-  { id: 'hot', label: 'Hot', icon: <TrendingUp size={16} className="mr-2" /> },
-  { id: 'new', label: 'New', icon: <Clock size={16} className="mr-2" /> },
+  { id: 'hot', label: 'Hot', icon: <TrendingUp size={16} /> },
+  { id: 'new', label: 'New', icon: <Clock size={16} /> },
 ];
 
-// Define topic filter options
+// Define topic filter options with icons
 const TOPIC_FILTERS = [
   { id: 'all', label: 'All Categories' },
-  { id: 'study', label: 'Study' },
-  { id: 'fun', label: 'Fun' },
-  { id: 'drama', label: 'Drama' },
-  { id: 'food', label: 'Food' },
-  { id: 'dorm', label: 'Dorm Life' },
-  { id: 'awkward', label: 'Awkward' },
-  { id: 'love', label: 'Love' },
+  { id: 'classes', label: 'Classes' },
+  { id: 'embarrassing', label: 'Embarrassing' },
+  { id: 'money', label: 'Money' },
+  { id: 'relationships', label: 'Relationships' },
+  { id: 'campus', label: 'Campus' },
 ];
 
 const Confession: React.FC = () => {
@@ -66,10 +61,17 @@ const Confession: React.FC = () => {
   const isVerified = user?.verificationStatus === 'verified';
   const [sortOption, setSortOption] = useState('hot');
   const [topicFilter, setTopicFilter] = useState('all');
-  const [confessions, setConfessions] = useState(SAMPLE_CONFESSIONS);
+  const [posts, setPosts] = useState(SAMPLE_CONFESSION_POSTS);
   
-  // Check if the user is allowed to access content based on university verification
-  const isSchoolVerified = isVerified && user?.university !== null;
+  // Filter posts by topic
+  const filteredPosts = useMemo(() => {
+    if (topicFilter === 'all') return posts;
+    
+    return posts.filter(post => {
+      // Case insensitive comparison
+      return post.topic?.toLowerCase() === topicFilter.toLowerCase();
+    });
+  }, [posts, topicFilter]);
   
   const handleCreatePost = () => {
     if (!isVerified) {
@@ -89,24 +91,22 @@ const Confession: React.FC = () => {
   };
   
   const handleReactionClick = (postId: string, reactionType: string) => {
-    if (!isVerified) {
-      toast({
-        title: "Verification Required",
-        description: "Only verified users can react to posts.",
-        variant: "default",
-      });
-      return;
-    }
-    
     // Update reactions (simulated)
-    setConfessions(prevConfessions => 
-      prevConfessions.map(confession => {
-        if (confession.id === postId) {
-          const updatedReactions = { ...confession.reactions };
-          updatedReactions[reactionType as keyof typeof confession.reactions] += 1;
-          return { ...confession, reactions: updatedReactions };
+    setPosts(prevPosts => 
+      prevPosts.map(post => {
+        if (post.id === postId) {
+          const updatedReactions = { ...post.reactions };
+          
+          if (reactionType === 'remove') {
+            // Handle removing a reaction
+            // In a real app, you would decrement the count
+            return post;
+          } else {
+            updatedReactions[reactionType as keyof typeof post.reactions] += 1;
+            return { ...post, reactions: updatedReactions };
+          }
         }
-        return confession;
+        return post;
       })
     );
   };
@@ -175,7 +175,7 @@ const Confession: React.FC = () => {
       <div className="flex px-4 py-2 gap-2 bg-white shadow-sm">
         <Select value={sortOption} onValueChange={setSortOption}>
           <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               {SORT_OPTIONS.find(opt => opt.id === sortOption)?.icon}
               <SelectValue placeholder="Sort By" />
             </div>
@@ -183,7 +183,7 @@ const Confession: React.FC = () => {
           <SelectContent>
             {SORT_OPTIONS.map((option) => (
               <SelectItem key={option.id} value={option.id}>
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                   {option.icon}
                   {option.label}
                 </div>
@@ -207,57 +207,43 @@ const Confession: React.FC = () => {
       </div>
       
       <main className="flex-1 p-0">
-        {!isSchoolVerified ? (
-          <div className="mt-8 p-4 text-center">
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-2 text-lg font-medium text-cendy-text">Verification Required</h3>
-              <p className="text-sm text-cendy-text-secondary">
-                You need to verify with your university email to view confessions from your school.
-              </p>
-            </div>
+        {/* Confession Posts - using filtered posts */}
+        <div className="space-y-0">
+          {filteredPosts.map((post, index) => (
+            <React.Fragment key={post.id}>
+              <ConfessionPost
+                content={post.content}
+                createdAt={formatTimestamp(post.createdAt)}
+                reactions={post.reactions}
+                commentCount={post.commentCount}
+                anonymous={post.anonymous}
+                onReactionClick={(reactionType) => handleReactionClick(post.id, reactionType)}
+                onCommentClick={() => handleOpenComments(post.id)}
+                className="px-4 py-3"
+                topic={post.topic}
+                fullWidth={true}
+                authorId={post.id} // Using post.id as author ID for demo
+              />
+              {index < filteredPosts.length - 1 && (
+                <div className="post-separator mx-auto"></div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        
+        {/* Floating Add Button */}
+        <button
+          onClick={handleCreatePost}
+          className="floating-add-button"
+        >
+          <PlusCircle size={20} className="text-white" />
+        </button>
+        
+        {/* Empty state if no posts match the filter */}
+        {filteredPosts.length === 0 && (
+          <div className="mt-8 text-center">
+            <p className="text-cendy-text-secondary">No confessions found that match the selected topic.</p>
           </div>
-        ) : (
-          <>
-            {/* Confession Posts */}
-            <div className="space-y-0">
-              {confessions.map((confession, index) => (
-                <React.Fragment key={confession.id}>
-                  <ConfessionPost
-                    title={confession.title}
-                    content={confession.content}
-                    createdAt={formatTimestamp(confession.createdAt)}
-                    reactions={confession.reactions}
-                    commentCount={confession.commentCount}
-                    anonymous={confession.anonymous}
-                    topic={confession.topic}
-                    onReactionClick={(reactionType) => handleReactionClick(confession.id, reactionType)}
-                    onCommentClick={() => handleOpenComments(confession.id)}
-                    className="px-4 py-3"
-                    fullWidth={true}
-                    authorId={confession.id} // Using confession.id as author ID for demo
-                  />
-                  {index < confessions.length - 1 && (
-                    <div className="post-separator mx-auto"></div>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-            
-            {/* Floating Add Button - simplified design */}
-            <button
-              onClick={handleCreatePost}
-              className="floating-add-button"
-            >
-              <PlusCircle size={20} className="text-white" />
-            </button>
-            
-            {/* Empty state if no confessions match the filter */}
-            {confessions.length === 0 && (
-              <div className="mt-8 text-center">
-                <p className="text-cendy-text-secondary">No confessions found. Be the first to share!</p>
-              </div>
-            )}
-          </>
         )}
       </main>
     </div>

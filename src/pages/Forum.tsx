@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, PlusCircle, ArrowLeft, MessageCircle, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,10 +44,10 @@ const SAMPLE_FORUM_POSTS = [
   }
 ];
 
-// Define sort options with icons
+// Define sort options with icons - fixed duplicate icons issue
 const SORT_OPTIONS = [
-  { id: 'hot', label: 'Hot', icon: <TrendingUp size={16} className="mr-2" /> },
-  { id: 'new', label: 'New', icon: <Clock size={16} className="mr-2" /> },
+  { id: 'hot', label: 'Hot', icon: <TrendingUp size={16} /> },
+  { id: 'new', label: 'New', icon: <Clock size={16} /> },
 ];
 
 // Define topic filter options with icons
@@ -153,6 +152,16 @@ const Forum: React.FC = () => {
     }
   };
   
+  // Add a filter function to filter posts by topic
+  const filteredPosts = React.useMemo(() => {
+    if (topicFilter === 'all') return posts;
+    
+    return posts.filter(post => {
+      // Case insensitive comparison
+      return post.topic?.toLowerCase() === topicFilter.toLowerCase();
+    });
+  }, [posts, topicFilter]);
+  
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
       <Header 
@@ -174,7 +183,7 @@ const Forum: React.FC = () => {
       <div className="flex px-4 py-2 gap-2 bg-white shadow-sm">
         <Select value={sortOption} onValueChange={setSortOption}>
           <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               {SORT_OPTIONS.find(opt => opt.id === sortOption)?.icon}
               <SelectValue placeholder="Sort By" />
             </div>
@@ -182,7 +191,7 @@ const Forum: React.FC = () => {
           <SelectContent>
             {SORT_OPTIONS.map((option) => (
               <SelectItem key={option.id} value={option.id}>
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                   {option.icon}
                   {option.label}
                 </div>
@@ -206,9 +215,9 @@ const Forum: React.FC = () => {
       </div>
       
       <main className="flex-1 p-0">
-        {/* Forum Posts */}
+        {/* Forum Posts - Using filtered posts instead of posts */}
         <div className="space-y-0">
-          {posts.map((post, index) => (
+          {filteredPosts.map((post, index) => (
             <React.Fragment key={post.id}>
               <ForumPost
                 title={post.title}
@@ -226,7 +235,7 @@ const Forum: React.FC = () => {
                 fullWidth={true}
                 authorId={post.id} // Using post.id as author ID for demo
               />
-              {index < posts.length - 1 && (
+              {index < filteredPosts.length - 1 && (
                 <div className="post-separator mx-auto"></div>
               )}
             </React.Fragment>
@@ -242,9 +251,9 @@ const Forum: React.FC = () => {
         </button>
         
         {/* Empty state if no posts match the filter */}
-        {posts.length === 0 && (
+        {filteredPosts.length === 0 && (
           <div className="mt-8 text-center">
-            <p className="text-cendy-text-secondary">No forum posts found. Be the first to start a discussion!</p>
+            <p className="text-cendy-text-secondary">No forum posts found that match the selected topic.</p>
           </div>
         )}
       </main>

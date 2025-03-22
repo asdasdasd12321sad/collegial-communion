@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -8,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 
-// Sample community posts for nationwide - in a real app, this would come from an API
 const SAMPLE_NATIONWIDE_POSTS = [
   {
     id: '1',
@@ -46,7 +44,6 @@ const SAMPLE_NATIONWIDE_POSTS = [
   }
 ];
 
-// Define topic filter options
 const TOPIC_FILTERS = [
   { id: 'all', label: 'All Categories' },
   { id: 'education', label: 'Education' },
@@ -65,6 +62,14 @@ const CommunityNationwide: React.FC = () => {
   const [topicFilter, setTopicFilter] = useState('all');
   const [posts, setPosts] = useState(SAMPLE_NATIONWIDE_POSTS);
   
+  const filteredPosts = useMemo(() => {
+    if (topicFilter === 'all') return posts;
+    
+    return posts.filter(post => {
+      return post.topic?.toLowerCase() === topicFilter.toLowerCase();
+    });
+  }, [posts, topicFilter]);
+  
   const handleCreatePost = () => {
     if (!isVerified) {
       toast({
@@ -75,7 +80,6 @@ const CommunityNationwide: React.FC = () => {
       return;
     }
     
-    // For this demo, we'll just show a toast notification
     toast({
       title: "Create Community Post",
       description: "This feature is coming soon!",
@@ -92,7 +96,6 @@ const CommunityNationwide: React.FC = () => {
       return;
     }
     
-    // Navigate to user profile
     navigate(`/profile/${postId}`);
   };
   
@@ -104,7 +107,6 @@ const CommunityNationwide: React.FC = () => {
     navigate(-1);
   };
   
-  // Format timestamp
   const formatTimestamp = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -148,7 +150,6 @@ const CommunityNationwide: React.FC = () => {
         }
       />
       
-      {/* Filter Options - moved up closer to headline */}
       <div className="flex px-4 py-2 bg-white shadow-sm">
         <Select value={topicFilter} onValueChange={setTopicFilter}>
           <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
@@ -165,9 +166,8 @@ const CommunityNationwide: React.FC = () => {
       </div>
       
       <main className="flex-1 p-0">
-        {/* Community Posts */}
         <div className="space-y-0">
-          {posts.map((post, index) => (
+          {filteredPosts.map((post, index) => (
             <React.Fragment key={post.id}>
               <CommunityPost
                 key={post.id}
@@ -182,16 +182,15 @@ const CommunityNationwide: React.FC = () => {
                 className="px-4 py-3"
                 topic={post.topic}
                 fullWidth={true}
-                authorId={post.id} // Using post.id as author ID for demo
+                authorId={post.id}
               />
-              {index < posts.length - 1 && (
+              {index < filteredPosts.length - 1 && (
                 <div className="post-separator mx-auto"></div>
               )}
             </React.Fragment>
           ))}
         </div>
         
-        {/* Floating Add Button - simplified design */}
         <button
           onClick={handleCreatePost}
           className="floating-add-button"
@@ -199,10 +198,9 @@ const CommunityNationwide: React.FC = () => {
           <PlusCircle size={20} className="text-white" />
         </button>
         
-        {/* Empty state if no posts match the filter */}
-        {posts.length === 0 && (
+        {filteredPosts.length === 0 && (
           <div className="mt-8 text-center">
-            <p className="text-cendy-text-secondary">No community posts found. Be the first to share!</p>
+            <p className="text-cendy-text-secondary">No community posts found that match the selected topic.</p>
           </div>
         )}
       </main>

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -63,6 +62,16 @@ const CampusCommunity: React.FC = () => {
   const isVerified = user?.verificationStatus === 'verified';
   const [topicFilter, setTopicFilter] = useState('all');
   const [posts, setPosts] = useState(SAMPLE_CAMPUS_POSTS);
+  
+  // Filter posts by topic
+  const filteredPosts = useMemo(() => {
+    if (topicFilter === 'all') return posts;
+    
+    return posts.filter(post => {
+      // Case insensitive comparison
+      return post.topic?.toLowerCase() === topicFilter.toLowerCase();
+    });
+  }, [posts, topicFilter]);
   
   const handleCreatePost = () => {
     if (!isVerified) {
@@ -164,9 +173,9 @@ const CampusCommunity: React.FC = () => {
       </div>
       
       <main className="flex-1 p-0">
-        {/* Community Posts */}
+        {/* Community Posts - using filtered posts */}
         <div className="space-y-0">
-          {posts.map((post, index) => (
+          {filteredPosts.map((post, index) => (
             <React.Fragment key={post.id}>
               <CommunityPost
                 title={post.title}
@@ -181,7 +190,7 @@ const CampusCommunity: React.FC = () => {
                 fullWidth={true}
                 authorId={post.id} // Using post.id as author ID for demo
               />
-              {index < posts.length - 1 && (
+              {index < filteredPosts.length - 1 && (
                 <div className="post-separator mx-auto"></div>
               )}
             </React.Fragment>
@@ -197,9 +206,9 @@ const CampusCommunity: React.FC = () => {
         </button>
         
         {/* Empty state if no posts match the filter */}
-        {posts.length === 0 && (
+        {filteredPosts.length === 0 && (
           <div className="mt-8 text-center">
-            <p className="text-cendy-text-secondary">No community posts found. Be the first to share!</p>
+            <p className="text-cendy-text-secondary">No community posts found that match the selected topic.</p>
           </div>
         )}
       </main>

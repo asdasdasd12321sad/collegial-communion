@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoginButton from '@/components/auth/LoginButton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, Mail, Apple, MailIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Custom icons for SSO providers
 const GoogleIcon = () => (
@@ -25,14 +26,47 @@ const MicrosoftIcon = () => (
 );
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
   const { isLoading, loginWithGoogle, loginWithMicrosoft, loginWithApple, loginWithEmail } = useAuth();
   const [isOtherOptionsOpen, setIsOtherOptionsOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    loginWithEmail(email, password);
+    try {
+      await loginWithEmail(email, password);
+      navigate('/home');
+    } catch (error) {
+      console.error("Login error:", error);
+    }
+  };
+  
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+      navigate('/home');
+    } catch (error) {
+      console.error("Google login error:", error);
+    }
+  };
+  
+  const handleMicrosoftLogin = async () => {
+    try {
+      await loginWithMicrosoft();
+      navigate('/home');
+    } catch (error) {
+      console.error("Microsoft login error:", error);
+    }
+  };
+  
+  const handleAppleLogin = async () => {
+    try {
+      await loginWithApple();
+      navigate('/home');
+    } catch (error) {
+      console.error("Apple login error:", error);
+    }
   };
   
   return (
@@ -45,21 +79,21 @@ const Login: React.FC = () => {
         
         <div className="space-y-4">
           <LoginButton
-            onClick={loginWithGoogle}
+            onClick={handleGoogleLogin}
             icon={<GoogleIcon />}
             label="Continue with Google"
             isLoading={isLoading}
           />
           
           <LoginButton
-            onClick={loginWithMicrosoft}
+            onClick={handleMicrosoftLogin}
             icon={<MicrosoftIcon />}
             label="Continue with Microsoft"
             isLoading={isLoading}
           />
           
           <LoginButton
-            onClick={loginWithApple}
+            onClick={handleAppleLogin}
             icon={<Apple size={20} />}
             label="Continue with Apple"
             isLoading={isLoading}
