@@ -3,6 +3,7 @@ import React from 'react';
 import { LogOut, ChevronRight, User, Bell, Shield, HelpCircle, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import BottomNavigation from '@/components/layout/BottomNavigation';
 
 const SettingItem: React.FC<{
   icon: React.ReactNode;
@@ -104,6 +105,8 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </main>
+      
+      <BottomNavigation />
     </div>
   );
 };

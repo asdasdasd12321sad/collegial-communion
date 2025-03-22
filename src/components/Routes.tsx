@@ -5,6 +5,9 @@ import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Home from '@/pages/Home';
 import Messages from '@/pages/Messages';
+import MessagesHome from '@/pages/MessagesHome';
+import MessagesChatroom from '@/pages/MessagesChatroom';
+import MessagesPrivate from '@/pages/MessagesPrivate';
 import Settings from '@/pages/Settings';
 import NotFound from '@/pages/NotFound';
 import Forum from '@/pages/Forum';
@@ -35,8 +38,13 @@ const Routes: React.FC = () => {
       
       {/* Protected routes */}
       <Route path="/home" element={user ? <Home /> : <Navigate to="/login" />} />
-      <Route path="/messages" element={user ? <Messages /> : <Navigate to="/login" />} />
-      <Route path="/messages/search" element={user ? <Messages /> : <Navigate to="/login" />} />
+      
+      {/* Messages routes */}
+      <Route path="/messages" element={user ? <MessagesHome /> : <Navigate to="/login" />} />
+      <Route path="/messages/search" element={user ? <MessagesHome /> : <Navigate to="/login" />} />
+      <Route path="/messages/chatroom/:chatroomId" element={user ? <MessagesChatroom /> : <Navigate to="/login" />} />
+      <Route path="/messages/direct/:userId" element={user ? <MessagesPrivate /> : <Navigate to="/login" />} />
+      
       <Route path="/settings" element={user ? <Settings /> : <Navigate to="/login" />} />
       
       {/* Forum routes */}

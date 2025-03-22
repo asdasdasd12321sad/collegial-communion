@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import CommunityPost from '@/components/community/CommunityPost';
+import NationwideCommunityPost from '@/components/Nationwide_community/Nationwide_community_post';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -189,7 +189,7 @@ const CommunityNationwide: React.FC = () => {
         <div className="space-y-0">
           {filteredPosts.map((post, index) => (
             <React.Fragment key={post.id}>
-              <CommunityPost
+              <NationwideCommunityPost
                 key={post.id}
                 title={post.title}
                 content={post.content}

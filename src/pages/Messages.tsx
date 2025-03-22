@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import BottomNavigation from '@/components/layout/BottomNavigation';
 
 const Messages: React.FC = () => {
   const { user } = useAuth();
@@ -50,6 +51,8 @@ const Messages: React.FC = () => {
           </div>
         )}
       </main>
+      
+      <BottomNavigation />
     </div>
   );
 };
