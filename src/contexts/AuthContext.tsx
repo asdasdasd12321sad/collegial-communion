@@ -1,29 +1,19 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
-
-type UserVerificationStatus = 'verified' | 'unverified';
-
-interface User {
-  id: string;
-  email: string;
-  displayName: string;
-  verificationStatus: UserVerificationStatus;
-  university: string | null;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  loginWithGoogle: () => Promise<void>;
-  loginWithMicrosoft: () => Promise<void>;
-  loginWithApple: () => Promise<void>;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  setDisplayName: (name: string) => void;
-  needsDisplayName: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { 
+  GoogleAuthProvider, 
+  OAuthProvider, 
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { auth } from '../config/firebase';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User } from '@supabase/supabase-js';
 
 // List of allowed college email domains for verification
 const ALLOWED_DOMAINS = [
@@ -34,25 +24,28 @@ const ALLOWED_DOMAINS = [
   // Add more college domains as needed
 ];
 
+interface AuthContextType {
+  user: User | null;
+  profile: any;
+  isLoading: boolean;
+  loginWithGoogle: () => Promise<void>;
+  loginWithMicrosoft: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  setDisplayName: (name: string) => void;
+  needsDisplayName: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [needsDisplayName, setNeedsDisplayName] = useState<boolean>(false);
-
-  // Check for existing user session on mount
-  useEffect(() => {
-    // Simulate checking for an existing session
-    const checkSession = () => {
-      const storedUser = localStorage.getItem('cendyUser');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-      setIsLoading(false);
-    };
-    
-    // Add a slight delay to simulate network request
-    setTimeout(checkSession, 800);
-  }, []);
 
   // Helper to check if email domain is allowed for verification
   const isAllowedDomain = (email: string): boolean => {
@@ -86,48 +79,152 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return universityMap[domain] || 'Unknown University';
   };
 
+  // Set up authentication state listeners
+  useEffect(() => {
+    setIsLoading(true);
+
+    // Firebase auth state listener
+    const unsubscribeFirebase = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // Sign in to Supabase with custom token
+          const { email, uid, displayName } = firebaseUser;
+          
+          // Get a custom token from Firebase user
+          const idToken = await firebaseUser.getIdToken();
+          
+          // Sign in to Supabase with custom token
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: idToken,
+          });
+          
+          if (error) {
+            throw error;
+          }
+          
+          if (data) {
+            setSession(data.session);
+            setUser(data.user);
+            
+            // Fetch user profile
+            if (data.user) {
+              fetchUserProfile(data.user.id);
+            }
+          }
+        } catch (error) {
+          console.error("Error syncing Firebase auth with Supabase:", error);
+          toast({
+            title: "Authentication Error",
+            description: "There was an issue with your account. Please try again.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // User is signed out of Firebase
+        setUser(null);
+        setProfile(null);
+        setSession(null);
+      }
+      
+      setIsLoading(false);
+    });
+
+    // Supabase auth state listener as backup
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+          if (session.user) {
+            fetchUserProfile(session.user.id);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProfile(null);
+          setSession(null);
+        }
+      }
+    );
+
+    // Check for existing Supabase session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session);
+        setUser(session.user);
+        if (session.user) {
+          fetchUserProfile(session.user.id);
+        }
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribeFirebase();
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Fetch user profile from Supabase
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setProfile(data);
+        setNeedsDisplayName(!data.display_name || data.display_name === 'User');
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  };
+
   // Google login
   const loginWithGoogle = async (): Promise<void> => {
     setIsLoading(true);
     
     try {
-      // Simulate Google Auth
-      // In a real app, this would be an actual Google Auth call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
       
-      // Simulate a returned email and ID
-      const mockEmail = 'student@harvard.edu';
-      const mockUserId = 'google-' + Math.random().toString(36).substring(2, 10);
+      // The signed-in user info
+      const firebaseUser = result.user;
       
-      if (isAllowedDomain(mockEmail)) {
-        // Detect university from email
-        const university = extractUniversityFromEmail(mockEmail);
+      if (!firebaseUser.email || !isAllowedDomain(firebaseUser.email)) {
+        // If not a valid educational email, sign out and show error
+        await firebaseSignOut(auth);
         
-        // Create a verified user without display name yet
-        const newUser: User = {
-          id: mockUserId,
-          email: mockEmail,
-          displayName: '',
-          verificationStatus: 'verified',
-          university: university || 'Unknown University'
-        };
-        
-        setUser(newUser);
-        setNeedsDisplayName(true);
-      } else {
         toast({
           title: "Authentication Error",
           description: "Please log in with your student email address.",
           variant: "destructive",
         });
+        
+        setIsLoading(false);
+        return;
       }
+      
+      // If we got here, the user authenticated successfully with a valid email
+      toast({
+        title: "Authentication Successful",
+        description: "You have successfully logged in.",
+      });
+      
     } catch (error) {
+      console.error("Google login error:", error);
       toast({
         title: "Authentication Error",
         description: "Failed to login with Google. Please try again.",
         variant: "destructive",
       });
-      console.error("Google login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -138,42 +235,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulate Microsoft Auth
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const provider = new OAuthProvider('microsoft.com');
+      const result = await signInWithPopup(auth, provider);
       
-      // Simulate a returned email and ID
-      const mockEmail = 'student@stanford.edu';
-      const mockUserId = 'microsoft-' + Math.random().toString(36).substring(2, 10);
+      // The signed-in user info
+      const firebaseUser = result.user;
       
-      if (isAllowedDomain(mockEmail)) {
-        // Detect university from email
-        const university = extractUniversityFromEmail(mockEmail);
+      if (!firebaseUser.email || !isAllowedDomain(firebaseUser.email)) {
+        // If not a valid educational email, sign out and show error
+        await firebaseSignOut(auth);
         
-        // Create a verified user without display name yet
-        const newUser: User = {
-          id: mockUserId,
-          email: mockEmail,
-          displayName: '',
-          verificationStatus: 'verified',
-          university: university || 'Unknown University'
-        };
-        
-        setUser(newUser);
-        setNeedsDisplayName(true);
-      } else {
         toast({
           title: "Authentication Error",
           description: "Please log in with your student email address.",
           variant: "destructive",
         });
+        
+        setIsLoading(false);
+        return;
       }
+      
+      // If we got here, the user authenticated successfully with a valid email
+      toast({
+        title: "Authentication Successful",
+        description: "You have successfully logged in.",
+      });
+      
     } catch (error) {
+      console.error("Microsoft login error:", error);
       toast({
         title: "Authentication Error",
         description: "Failed to login with Microsoft. Please try again.",
         variant: "destructive",
       });
-      console.error("Microsoft login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -184,32 +278,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulate Apple Auth
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const provider = new OAuthProvider('apple.com');
+      const result = await signInWithPopup(auth, provider);
       
-      // For Apple login, we always create unverified users
-      const mockUserId = 'apple-' + Math.random().toString(36).substring(2, 10);
-      const mockName = 'Apple User'; // In a real app, this would come from Apple
-      
-      const newUser: User = {
-        id: mockUserId,
-        email: 'private@apple.com', // Apple often provides private relay emails
-        displayName: mockName,
-        verificationStatus: 'unverified',
-        university: null
-      };
-      
-      setUser(newUser);
-      // Store user in localStorage
-      localStorage.setItem('cendyUser', JSON.stringify(newUser));
+      // For Apple login, we don't verify email domains because Apple often uses private relay
+      toast({
+        title: "Authentication Successful",
+        description: "You have successfully logged in with Apple.",
+      });
       
     } catch (error) {
+      console.error("Apple login error:", error);
       toast({
         title: "Authentication Error",
         description: "Failed to login with Apple. Please try again.",
         variant: "destructive",
       });
-      console.error("Apple login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -220,79 +304,170 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulate Email Auth
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       // Validate email and password
       if (!email || !password) {
         throw new Error("Email and password are required");
       }
       
-      // Check if it's a university email
-      const isUniversityEmail = isAllowedDomain(email);
+      // Sign in with Firebase
+      await signInWithEmailAndPassword(auth, email, password);
       
-      // For email login, verify status based on email domain
-      const mockUserId = 'email-' + Math.random().toString(36).substring(2, 10);
-      const randomName = 'User' + Math.floor(Math.random() * 10000);
+      toast({
+        title: "Login Successful",
+        description: "You have successfully logged in.",
+      });
       
-      // Detect university from email if it's a university email
-      const university = isUniversityEmail ? extractUniversityFromEmail(email) : null;
+    } catch (error: any) {
+      console.error("Email login error:", error);
       
-      const newUser: User = {
-        id: mockUserId,
-        email: email,
-        displayName: randomName,
-        verificationStatus: isUniversityEmail ? 'verified' : 'unverified',
-        university: university
-      };
+      let errorMessage = "Failed to login. Please try again.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = "Too many failed login attempts. Please try again later.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       
-      setUser(newUser);
-      // Store user in localStorage
-      localStorage.setItem('cendyUser', JSON.stringify(newUser));
-      
-    } catch (error) {
       toast({
         title: "Authentication Error",
-        description: error instanceof Error ? error.message : "Failed to login. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
-      console.error("Email login error:", error);
+      
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Email signup
+  const signUpWithEmail = async (email: string, password: string): Promise<void> => {
+    setIsLoading(true);
+    
+    try {
+      // Validate email and password
+      if (!email || !password) {
+        throw new Error("Email and password are required");
+      }
+      
+      if (password.length < 6) {
+        throw new Error("Password must be at least 6 characters");
+      }
+      
+      // Check if the email is from an allowed domain for verification
+      const isVerified = isAllowedDomain(email);
+      
+      // Create user with Firebase
+      await createUserWithEmailAndPassword(auth, email, password);
+      
+      toast({
+        title: "Sign Up Successful",
+        description: isVerified 
+          ? "Your account has been created and verified." 
+          : "Your account has been created, but you need to verify your student status.",
+      });
+      
+      // User will be automatically logged in by Firebase's onAuthStateChanged
+      
+    } catch (error: any) {
+      console.error("Email signup error:", error);
+      
+      let errorMessage = "Failed to sign up. Please try again.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already in use. Please log in or use a different email.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Invalid email address. Please check and try again.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Please use a stronger password.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Sign Up Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
     } finally {
       setIsLoading(false);
     }
   };
 
   // Set display name
-  const setDisplayName = (name: string): void => {
+  const setDisplayName = async (name: string): Promise<void> => {
     if (!user) return;
     
-    const updatedUser = {
-      ...user,
-      displayName: name,
-    };
-    
-    setUser(updatedUser);
-    setNeedsDisplayName(false);
-    
-    // Store updated user in localStorage
-    localStorage.setItem('cendyUser', JSON.stringify(updatedUser));
+    try {
+      // Update profile in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({ display_name: name, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setProfile(prev => ({ ...prev, display_name: name }));
+      setNeedsDisplayName(false);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your display name has been updated.",
+      });
+      
+    } catch (error) {
+      console.error("Error updating display name:", error);
+      toast({
+        title: "Update Error",
+        description: "Failed to update display name. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Logout
-  const logout = (): void => {
-    setUser(null);
-    localStorage.removeItem('cendyUser');
+  const logout = async (): void => {
+    try {
+      // Sign out from Firebase
+      await firebaseSignOut(auth);
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Clear local state
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Logout Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        profile,
         isLoading,
         loginWithGoogle,
         loginWithMicrosoft,
         loginWithApple,
         loginWithEmail,
+        signUpWithEmail,
         logout,
         setDisplayName,
         needsDisplayName,
