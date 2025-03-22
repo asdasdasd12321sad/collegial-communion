@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { MessageCircle, MoreHorizontal, ThumbsUp } from 'lucide-react';
+import { MessageCircle, MoreHorizontal, ThumbsUp, Save, EyeOff, Flag, Pencil, Trash } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -8,6 +8,24 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import ReactionButton from "@/components/ui/reaction-button";
 import ReactionPopover, { ReactionType } from "@/components/ui/reaction-popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ReactionCounts {
   like: number;
@@ -33,6 +51,9 @@ interface ForumPostProps {
   topic?: string;
   fullWidth?: boolean;
   authorId?: string;
+  currentUserId?: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const ForumPost: React.FC<ForumPostProps> = ({
@@ -49,14 +70,20 @@ const ForumPost: React.FC<ForumPostProps> = ({
   className,
   topic,
   fullWidth = false,
-  authorId
+  authorId,
+  currentUserId,
+  onEdit,
+  onDelete
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
   const [userReaction, setUserReaction] = useState<ReactionType>(null);
   const [showReactionPopover, setShowReactionPopover] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const likeButtonRef = useRef<HTMLDivElement>(null);
+  
+  const isOwner = authorId === currentUserId || authorId === user?.id;
   
   const handleReaction = (reaction: ReactionType) => {
     if (!isVerified) {
@@ -112,11 +139,53 @@ const ForumPost: React.FC<ForumPostProps> = ({
     setShowReactionPopover(true);
   };
   
-  const handleReportClick = () => {
+  const handleSavePost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast({
+      title: "Post Saved",
+      description: "This post has been saved to your bookmarks.",
+    });
+  };
+
+  const handleHidePost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast({
+      title: "Post Hidden",
+      description: "This post has been hidden from your feed.",
+    });
+  };
+
+  const handleReportPost = (e: React.MouseEvent) => {
+    e.stopPropagation();
     toast({
       title: "Report Submitted",
       description: "Thank you for helping keep our community safe.",
     });
+  };
+
+  const handleEditPost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEdit) {
+      onEdit();
+    } else {
+      toast({
+        title: "Edit Post",
+        description: "This feature is coming soon!",
+      });
+    }
+  };
+
+  const handleDeletePost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete();
+    } else {
+      setIsDeleteConfirmOpen(false);
+      toast({
+        title: "Post Deleted",
+        description: "Your post has been successfully deleted.",
+      });
+    }
   };
 
   const handleAuthorClick = () => {
@@ -219,18 +288,72 @@ const ForumPost: React.FC<ForumPostProps> = ({
             </div>
           </div>
         </div>
-        <button 
-          onClick={handleReportClick}
-          className="text-cendy-text-secondary hover:text-red-500"
-        >
-          <MoreHorizontal size={16} />
-        </button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <button className="text-cendy-text-secondary hover:text-cendy-text">
+              <MoreHorizontal size={16} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48 bg-white">
+            <DropdownMenuItem onClick={handleSavePost}>
+              <Save size={16} className="mr-2" />
+              <span>Save post</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleHidePost}>
+              <EyeOff size={16} className="mr-2" />
+              <span>Hide post</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleReportPost}>
+              <Flag size={16} className="mr-2" />
+              <span>Report post</span>
+            </DropdownMenuItem>
+            
+            {isOwner && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleEditPost}>
+                  <Pencil size={16} className="mr-2" />
+                  <span>Edit post</span>
+                </DropdownMenuItem>
+                <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem 
+                      className="text-red-500 focus:text-red-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsDeleteConfirmOpen(true);
+                      }}
+                    >
+                      <Trash size={16} className="mr-2" />
+                      <span>Delete post</span>
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your post.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeletePost} className="bg-red-500 hover:bg-red-600">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       {/* Post Title & Content */}
-      <h3 className="font-semibold text-lg mb-2 text-cendy-text">{title}</h3>
+      <h3 className="font-semibold text-lg mb-2 text-cendy-text cursor-pointer" onClick={onCommentClick}>{title}</h3>
       <div className="mb-2">
-        <p className="text-cendy-text">{content}</p>
+        <p className="text-cendy-text cursor-pointer" onClick={onCommentClick}>{content}</p>
       </div>
       
       {/* Reactions & Comments - without border */}
