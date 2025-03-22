@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +7,8 @@ import CommunityPost from '@/components/community/CommunityPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import NewPostModal from '@/components/post/NewPostModal';
+import BottomNavigation from '@/components/layout/BottomNavigation';
 
 // Sample community posts - in a real app, this would come from an API
 const SAMPLE_CAMPUS_POSTS = [
@@ -62,6 +65,7 @@ const CampusCommunity: React.FC = () => {
   const isVerified = user?.verificationStatus === 'verified';
   const [topicFilter, setTopicFilter] = useState('all');
   const [posts, setPosts] = useState(SAMPLE_CAMPUS_POSTS);
+  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   
   // Filter posts by topic
   const filteredPosts = useMemo(() => {
@@ -83,11 +87,7 @@ const CampusCommunity: React.FC = () => {
       return;
     }
     
-    // For this demo, we'll just show a toast notification
-    toast({
-      title: "Create Community Post",
-      description: "This feature is coming soon!",
-    });
+    setIsNewPostModalOpen(true);
   };
   
   const handleOpenPost = (authorName: string, postId: string) => {
@@ -100,8 +100,8 @@ const CampusCommunity: React.FC = () => {
       return;
     }
     
-    // Navigate to user profile instead of opening chat directly
-    navigate(`/profile/${postId}`);
+    // Navigate to direct chat with post author
+    navigate(`/messages/direct/${postId}`);
   };
   
   const handleSearchClick = () => {
@@ -110,6 +110,23 @@ const CampusCommunity: React.FC = () => {
   
   const handleBackClick = () => {
     navigate(-1);
+  };
+  
+  const handleNewPost = (postData: any) => {
+    // Add the new post to the list
+    const newPost = {
+      id: `post-${Date.now()}`,
+      title: postData.title,
+      content: postData.content,
+      authorName: user?.displayName || 'User',
+      createdAt: postData.createdAt,
+      commentCount: 0,
+      hasImage: false,
+      topic: postData.topic
+    };
+    
+    // Add to start of posts array
+    setPosts([newPost, ...posts]);
   };
   
   // Format timestamp
@@ -156,7 +173,7 @@ const CampusCommunity: React.FC = () => {
         }
       />
       
-      {/* Filter Options - moved up closer to headline */}
+      {/* Filter Options */}
       <div className="flex px-4 py-2 bg-white shadow-sm">
         <Select value={topicFilter} onValueChange={setTopicFilter}>
           <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
@@ -173,7 +190,7 @@ const CampusCommunity: React.FC = () => {
       </div>
       
       <main className="flex-1 p-0">
-        {/* Community Posts - using filtered posts */}
+        {/* Community Posts */}
         <div className="space-y-0">
           {filteredPosts.map((post, index) => (
             <React.Fragment key={post.id}>
@@ -197,7 +214,7 @@ const CampusCommunity: React.FC = () => {
           ))}
         </div>
         
-        {/* Floating Add Button - simplified design */}
+        {/* Floating Add Button */}
         <button
           onClick={handleCreatePost}
           className="floating-add-button"
@@ -211,7 +228,16 @@ const CampusCommunity: React.FC = () => {
             <p className="text-cendy-text-secondary">No community posts found that match the selected topic.</p>
           </div>
         )}
+        
+        {/* New Post Modal */}
+        <NewPostModal 
+          isOpen={isNewPostModalOpen}
+          onClose={() => setIsNewPostModalOpen(false)}
+          onPost={handleNewPost}
+        />
       </main>
+      
+      <BottomNavigation />
     </div>
   );
 };

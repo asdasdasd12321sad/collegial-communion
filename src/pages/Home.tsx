@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header';
 import ChannelCard from '@/components/home/ChannelCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import BottomNavigation from '@/components/layout/BottomNavigation';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -92,6 +93,8 @@ const Home: React.FC = () => {
           )}
         </div>
       </main>
+
+      <BottomNavigation />
     </div>
   );
 };

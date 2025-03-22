@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +7,8 @@ import CommunityPost from '@/components/community/CommunityPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import NewPostModal from '@/components/post/NewPostModal';
+import BottomNavigation from '@/components/layout/BottomNavigation';
 
 const SAMPLE_NATIONWIDE_POSTS = [
   {
@@ -61,6 +64,7 @@ const CommunityNationwide: React.FC = () => {
   const isVerified = user?.verificationStatus === 'verified';
   const [topicFilter, setTopicFilter] = useState('all');
   const [posts, setPosts] = useState(SAMPLE_NATIONWIDE_POSTS);
+  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   
   const filteredPosts = useMemo(() => {
     if (topicFilter === 'all') return posts;
@@ -80,10 +84,7 @@ const CommunityNationwide: React.FC = () => {
       return;
     }
     
-    toast({
-      title: "Create Community Post",
-      description: "This feature is coming soon!",
-    });
+    setIsNewPostModalOpen(true);
   };
   
   const handleOpenPost = (authorName: string, postId: string) => {
@@ -96,7 +97,8 @@ const CommunityNationwide: React.FC = () => {
       return;
     }
     
-    navigate(`/profile/${postId}`);
+    // Navigate to direct chat with the post author
+    navigate(`/messages/direct/${postId}`);
   };
   
   const handleSearchClick = () => {
@@ -105,6 +107,24 @@ const CommunityNationwide: React.FC = () => {
   
   const handleBackClick = () => {
     navigate(-1);
+  };
+  
+  const handleNewPost = (postData: any) => {
+    // Add the new post to the list
+    const newPost = {
+      id: `post-${Date.now()}`,
+      title: postData.title,
+      content: postData.content,
+      authorName: user?.displayName || 'User',
+      authorUniversity: user?.university || 'University',
+      createdAt: postData.createdAt,
+      commentCount: 0,
+      hasImage: false,
+      topic: postData.topic
+    };
+    
+    // Add to start of posts array
+    setPosts([newPost, ...posts]);
   };
   
   const formatTimestamp = (dateString: string) => {
@@ -203,7 +223,16 @@ const CommunityNationwide: React.FC = () => {
             <p className="text-cendy-text-secondary">No community posts found that match the selected topic.</p>
           </div>
         )}
+        
+        {/* New Post Modal */}
+        <NewPostModal 
+          isOpen={isNewPostModalOpen}
+          onClose={() => setIsNewPostModalOpen(false)}
+          onPost={handleNewPost}
+        />
       </main>
+      
+      <BottomNavigation />
     </div>
   );
 };

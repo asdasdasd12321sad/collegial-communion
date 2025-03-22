@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { MessageCircle, MoreHorizontal, ThumbsUp } from 'lucide-react';
 import { cn } from "@/lib/utils";
@@ -19,12 +18,11 @@ interface ReactionCounts {
 }
 
 interface ConfessionPostProps {
-  title?: string;
+  title: string;
   content: string;
   createdAt: string;
   reactions: ReactionCounts;
   commentCount: number;
-  anonymous: boolean;
   onReactionClick: (reactionType: string) => void;
   onCommentClick: () => void;
   className?: string;
@@ -39,7 +37,6 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
   createdAt,
   reactions,
   commentCount,
-  anonymous,
   onReactionClick,
   onCommentClick,
   className,
@@ -64,12 +61,10 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
       return;
     }
     
-    // If the same reaction is selected, remove it
     if (userReaction === reaction) {
       setUserReaction(null);
       onReactionClick('remove');
     } else {
-      // Set the user's reaction
       setUserReaction(reaction);
       onReactionClick(reaction || 'like');
     }
@@ -85,7 +80,6 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
       return;
     }
     
-    // Toggle like reaction
     if (userReaction === 'like') {
       setUserReaction(null);
       onReactionClick('remove');
@@ -121,7 +115,6 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
     }
   };
   
-  // Get the two most popular reactions
   const getTopReactions = () => {
     const sortedReactions = Object.entries(reactions)
       .sort(([, countA], [, countB]) => countB - countA)
@@ -134,7 +127,6 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
   const topReactions = getTopReactions();
   const totalReactions = Object.values(reactions).reduce((sum, count) => sum + count, 0);
   
-  // Map reaction types to emojis
   const reactionEmojis: Record<string, string> = {
     like: '👍',
     heart: '❤️',
@@ -192,7 +184,6 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
       fullWidth ? "" : "rounded-xl shadow-sm hover-card-effect",
       className
     )}>
-      {/* Post Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2" onClick={handleAuthorClick}>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cendy-blue/80 text-sm font-medium text-white cursor-pointer">
@@ -220,16 +211,13 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
         </button>
       </div>
       
-      {/* Post Title & Content */}
-      {title && <h3 className="font-semibold text-lg mb-2 text-cendy-text">{title}</h3>}
+      <h3 className="font-semibold text-lg mb-2 text-cendy-text cursor-pointer" onClick={onCommentClick}>{title}</h3>
       <div className="mb-2">
-        <p className="text-cendy-text">{content}</p>
+        <p className="text-cendy-text cursor-pointer" onClick={onCommentClick}>{content}</p>
       </div>
       
-      {/* Reactions & Comments - Updated layout without border */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          {/* Most reacted icons */}
           {topReactions.length > 0 && (
             <div className="flex items-center">
               <div className="flex">
@@ -245,7 +233,6 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
             </div>
           )}
           
-          {/* Comment count with icon */}
           {commentCount > 0 && (
             <div className="flex items-center text-cendy-text-secondary ml-3">
               <MessageCircle size={14} className="mr-1" />
@@ -254,7 +241,6 @@ const ConfessionPost: React.FC<ConfessionPostProps> = ({
           )}
         </div>
         
-        {/* Reaction button - adjusted spacing to appear more centered */}
         <div ref={likeButtonRef} className="relative ml-auto mr-2">
           <ReactionButton
             icon={getReactionIcon()}

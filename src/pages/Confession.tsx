@@ -7,39 +7,41 @@ import ConfessionPost from '@/components/confession/ConfessionPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import NewPostModal from '@/components/post/NewPostModal';
+import BottomNavigation from '@/components/layout/BottomNavigation';
 
 // Sample confession posts data - in a real app, this would come from an API
 const SAMPLE_CONFESSION_POSTS = [
   {
     id: '1',
+    title: "Pretending to Understand Quantum Physics", // Added title
     content: "I've been pretending to understand quantum physics in my advanced physics class for the entire semester.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
     reactions: { like: 25, heart: 12, laugh: 30, wow: 8, sad: 3, angry: 0 },
     commentCount: 15,
-    anonymous: false,
     topic: 'Classes'
   },
   {
     id: '2',
+    title: "Called My Professor 'Mom'", // Added title
     content: "I accidentally called my professor 'mom' during a lecture and now I'm considering dropping the class.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 15).toISOString(), // 15 hours ago
     reactions: { like: 87, heart: 20, laugh: 156, wow: 12, sad: 5, angry: 0 },
     commentCount: 42,
-    anonymous: false,
     topic: 'Embarrassing'
   },
   {
     id: '3',
+    title: "Ramen for Three Weeks Straight", // Added title
     content: "I've been eating ramen for three weeks straight because I spent all my money on concert tickets.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
     reactions: { like: 45, heart: 8, laugh: 15, wow: 3, sad: 28, angry: 0 },
     commentCount: 23,
-    anonymous: false,
     topic: 'Money'
   }
 ];
 
-// Define sort options with icons - fixed duplicate icons issue
+// Define sort options with icons
 const SORT_OPTIONS = [
   { id: 'hot', label: 'Hot', icon: <TrendingUp size={16} /> },
   { id: 'new', label: 'New', icon: <Clock size={16} /> },
@@ -62,6 +64,7 @@ const Confession: React.FC = () => {
   const [sortOption, setSortOption] = useState('hot');
   const [topicFilter, setTopicFilter] = useState('all');
   const [posts, setPosts] = useState(SAMPLE_CONFESSION_POSTS);
+  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   
   // Filter posts by topic
   const filteredPosts = useMemo(() => {
@@ -83,11 +86,7 @@ const Confession: React.FC = () => {
       return;
     }
     
-    // For this demo, we'll just show a toast notification
-    toast({
-      title: "Create Confession",
-      description: "This feature is coming soon!",
-    });
+    setIsNewPostModalOpen(true);
   };
   
   const handleReactionClick = (postId: string, reactionType: string) => {
@@ -112,11 +111,8 @@ const Confession: React.FC = () => {
   };
   
   const handleOpenComments = (postId: string) => {
-    // For this demo, we'll just show a toast notification
-    toast({
-      title: "Open Comments",
-      description: `Opening comments for post ${postId}`,
-    });
+    // Navigate to chatroom for this post
+    navigate(`/messages/${postId}`);
   };
   
   const handleSearchClick = () => {
@@ -125,6 +121,25 @@ const Confession: React.FC = () => {
   
   const handleBackClick = () => {
     navigate(-1);
+  };
+  
+  const handleNewPost = (postData: any) => {
+    // Add the new post to the list
+    const newPost = {
+      id: `post-${Date.now()}`,
+      title: postData.title,
+      content: postData.content,
+      createdAt: postData.createdAt,
+      reactions: { like: 0, heart: 0, laugh: 0, wow: 0, sad: 0, angry: 0 },
+      commentCount: 0,
+      topic: postData.topic
+    };
+    
+    // Add to start of posts array
+    setPosts([newPost, ...posts]);
+    
+    // In a real app, this would also create a chatroom
+    console.log("Creating chatroom with data:", postData);
   };
   
   // Format timestamp
@@ -171,7 +186,7 @@ const Confession: React.FC = () => {
         }
       />
       
-      {/* Filter Options - improved appearance and moved closer to header */}
+      {/* Filter Options */}
       <div className="flex px-4 py-2 gap-2 bg-white shadow-sm">
         <Select value={sortOption} onValueChange={setSortOption}>
           <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
@@ -207,16 +222,16 @@ const Confession: React.FC = () => {
       </div>
       
       <main className="flex-1 p-0">
-        {/* Confession Posts - using filtered posts */}
+        {/* Confession Posts */}
         <div className="space-y-0">
           {filteredPosts.map((post, index) => (
             <React.Fragment key={post.id}>
               <ConfessionPost
+                title={post.title}
                 content={post.content}
                 createdAt={formatTimestamp(post.createdAt)}
                 reactions={post.reactions}
                 commentCount={post.commentCount}
-                anonymous={post.anonymous}
                 onReactionClick={(reactionType) => handleReactionClick(post.id, reactionType)}
                 onCommentClick={() => handleOpenComments(post.id)}
                 className="px-4 py-3"
@@ -245,7 +260,16 @@ const Confession: React.FC = () => {
             <p className="text-cendy-text-secondary">No confessions found that match the selected topic.</p>
           </div>
         )}
+        
+        {/* New Post Modal */}
+        <NewPostModal 
+          isOpen={isNewPostModalOpen}
+          onClose={() => setIsNewPostModalOpen(false)}
+          onPost={handleNewPost}
+        />
       </main>
+      
+      <BottomNavigation />
     </div>
   );
 };
