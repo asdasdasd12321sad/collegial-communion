@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -9,41 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import NewPostModal from '@/components/post/NewPostModal';
 import BottomNavigation from '@/components/layout/BottomNavigation';
-
-// Sample community posts - in a real app, this would come from an API
-const SAMPLE_CAMPUS_POSTS = [
-  {
-    id: '1',
-    title: 'Looking for a Roommate',
-    content: "Looking for a roommate next semester! I'm a junior studying Computer Science. DM if interested!",
-    authorName: 'Alex Thompson',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-    commentCount: 3,
-    hasImage: false,
-    topic: 'Housing'
-  },
-  {
-    id: '2',
-    title: 'Biology 101 Study Group',
-    content: "Anyone want to form a study group for Biology 101? Finals are coming up!",
-    authorName: 'Jamie Wilson',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(), // 10 hours ago
-    commentCount: 7,
-    hasImage: false,
-    topic: 'Study'
-  },
-  {
-    id: '3',
-    title: 'Beautiful Campus Sunset',
-    content: "Check out the sunset from my dorm window! Campus looks amazing today.",
-    authorName: 'Riley Evans',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-    commentCount: 15,
-    hasImage: true,
-    imageUrl: "https://images.unsplash.com/photo-1472213984618-c79aaec300c1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    topic: 'Campus'
-  }
-];
+import CustomPagination from '@/components/ui/custom-pagination';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define topic filter options
 const TOPIC_FILTERS = [
@@ -59,23 +26,114 @@ const TOPIC_FILTERS = [
   { id: 'campus', label: 'Campus' },
 ];
 
+// Number of posts per page
+const POSTS_PER_PAGE = 5;
+
 const CampusCommunity: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
   const [topicFilter, setTopicFilter] = useState('all');
-  const [posts, setPosts] = useState(SAMPLE_CAMPUS_POSTS);
+  const [posts, setPosts] = useState<any[]>([]);
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalPosts, setTotalPosts] = useState(0);
   
-  // Filter posts by topic
-  const filteredPosts = useMemo(() => {
-    if (topicFilter === 'all') return posts;
+  // Fetch posts from Supabase
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Calculate offset for pagination
+        const offset = (currentPage - 1) * POSTS_PER_PAGE;
+        
+        // Query for total count (for pagination)
+        let countQuery = supabase
+          .from('community_posts')
+          .select('id', { count: 'exact', head: true })
+          .eq('community_type', 'campus');
+        
+        // Apply topic filter if not 'all'
+        if (topicFilter !== 'all') {
+          countQuery = countQuery.ilike('topic', topicFilter);
+        }
+        
+        const { count, error: countError } = await countQuery;
+        
+        if (countError) {
+          console.error('Error fetching count:', countError);
+          return;
+        }
+        
+        // Set total posts count and calculate total pages
+        const totalCount = count || 0;
+        setTotalPosts(totalCount);
+        setTotalPages(Math.max(1, Math.ceil(totalCount / POSTS_PER_PAGE)));
+        
+        // Main query for posts with pagination
+        let query = supabase
+          .from('community_posts')
+          .select(`
+            id,
+            title,
+            content,
+            created_at,
+            topic,
+            author_id,
+            profiles(display_name, university)
+          `)
+          .eq('community_type', 'campus')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + POSTS_PER_PAGE - 1);
+        
+        // Apply topic filter if not 'all'
+        if (topicFilter !== 'all') {
+          query = query.ilike('topic', topicFilter);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Error fetching posts:', error);
+          return;
+        }
+        
+        // Format posts for display
+        const formattedPosts = data.map(post => ({
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          authorName: post.profiles?.display_name || 'Anonymous',
+          createdAt: post.created_at,
+          commentCount: 0, // You may fetch this from a separate query if needed
+          hasImage: false, // To be implemented with storage
+          topic: post.topic,
+          authorId: post.author_id
+        }));
+        
+        setPosts(formattedPosts);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    return posts.filter(post => {
-      // Case insensitive comparison
-      return post.topic?.toLowerCase() === topicFilter.toLowerCase();
-    });
-  }, [posts, topicFilter]);
+    fetchPosts();
+  }, [currentPage, topicFilter]);
+  
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    // Scroll to top when changing page
+    window.scrollTo(0, 0);
+  };
+  
+  // Filter posts by topic - now handled directly in the database query
+  const filteredPosts = posts;
   
   const handleCreatePost = () => {
     if (!isVerified) {
@@ -112,21 +170,72 @@ const CampusCommunity: React.FC = () => {
     navigate(-1);
   };
   
-  const handleNewPost = (postData: any) => {
-    // Add the new post to the list
-    const newPost = {
-      id: `post-${Date.now()}`,
-      title: postData.title,
-      content: postData.content,
-      authorName: user?.displayName || 'User',
-      createdAt: postData.createdAt,
-      commentCount: 0,
-      hasImage: false,
-      topic: postData.topic
-    };
+  const handleNewPost = async (postData: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to create a post.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Add to start of posts array
-    setPosts([newPost, ...posts]);
+    try {
+      const { data, error } = await supabase
+        .from('community_posts')
+        .insert([
+          {
+            title: postData.title,
+            content: postData.content,
+            topic: postData.topic,
+            author_id: user.id,
+            community_type: 'campus',
+          }
+        ])
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Add the new post to the list if we're on the first page
+      if (currentPage === 1) {
+        // Create formatted post
+        const newPost = {
+          id: data[0].id,
+          title: postData.title,
+          content: postData.content,
+          authorName: user.displayName || 'User',
+          createdAt: new Date().toISOString(),
+          commentCount: 0,
+          hasImage: false,
+          topic: postData.topic,
+          authorId: user.id
+        };
+        
+        // Add to start of posts array
+        setPosts([newPost, ...posts.slice(0, POSTS_PER_PAGE - 1)]);
+        
+        // Update total posts count and pages
+        setTotalPosts(prev => prev + 1);
+        setTotalPages(Math.max(1, Math.ceil((totalPosts + 1) / POSTS_PER_PAGE)));
+      } else {
+        // If not on first page, navigate to first page to see the new post
+        setCurrentPage(1);
+      }
+      
+      toast({
+        title: "Post Created",
+        description: "Your post has been published successfully.",
+      });
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Format timestamp
@@ -190,29 +299,49 @@ const CampusCommunity: React.FC = () => {
       </div>
       
       <main className="flex-1 p-0">
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cendy-blue"></div>
+          </div>
+        )}
+        
         {/* Community Posts */}
-        <div className="space-y-0">
-          {filteredPosts.map((post, index) => (
-            <React.Fragment key={post.id}>
-              <CampusCommunityPost
-                title={post.title}
-                content={post.content}
-                authorName={post.authorName}
-                createdAt={formatTimestamp(post.createdAt)}
-                commentCount={0}
-                imageUrl={post.hasImage ? post.imageUrl : undefined}
-                onPostClick={() => handleOpenPost(post.authorName, post.id)}
-                className="px-4 py-3"
-                topic={post.topic}
-                fullWidth={true}
-                authorId={post.id} // Using post.id as author ID for demo
-              />
-              {index < filteredPosts.length - 1 && (
-                <div className="post-separator mx-auto"></div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
+        {!isLoading && (
+          <div className="space-y-0">
+            {filteredPosts.map((post, index) => (
+              <React.Fragment key={post.id}>
+                <CampusCommunityPost
+                  title={post.title}
+                  content={post.content}
+                  authorName={post.authorName}
+                  createdAt={formatTimestamp(post.createdAt)}
+                  commentCount={0}
+                  imageUrl={post.hasImage ? post.imageUrl : undefined}
+                  onPostClick={() => handleOpenPost(post.authorName, post.id)}
+                  className="px-4 py-3"
+                  topic={post.topic}
+                  fullWidth={true}
+                  authorId={post.authorId}
+                />
+                {index < filteredPosts.length - 1 && (
+                  <div className="post-separator mx-auto"></div>
+                )}
+              </React.Fragment>
+            ))}
+            
+            {/* Pagination component */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-4">
+                <CustomPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Floating Add Button */}
         <button
@@ -223,7 +352,7 @@ const CampusCommunity: React.FC = () => {
         </button>
         
         {/* Empty state if no posts match the filter */}
-        {filteredPosts.length === 0 && (
+        {!isLoading && filteredPosts.length === 0 && (
           <div className="mt-8 text-center">
             <p className="text-cendy-text-secondary">No community posts found that match the selected topic.</p>
           </div>
