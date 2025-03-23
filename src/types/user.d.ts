@@ -51,3 +51,19 @@ interface PaginationParams {
   filter?: string;
   sort?: string;
 }
+
+// Tab types for profile
+type ProfileTab = 'photos' | 'interests' | 'about';
+
+// Settings section types
+interface SettingItem {
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}
+
+interface SettingsSection {
+  title: string;
+  items: SettingItem[];
+}

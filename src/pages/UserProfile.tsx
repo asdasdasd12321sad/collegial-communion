@@ -1,9 +1,11 @@
 
-import React from 'react';
-import { ArrowLeft, MessageCircle, Calendar, School, MapPin, Bookmark } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, MessageCircle, Calendar, School, User, ImageIcon, BookmarkIcon, Heart } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from '@/hooks/use-toast';
 import Header from '@/components/layout/Header';
 
@@ -51,6 +53,7 @@ const UserProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
+  const [activeTab, setActiveTab] = useState("photos");
   
   // Find user by ID
   const profileUser = SAMPLE_USERS.find(u => u.id === userId) || SAMPLE_USERS[0];
@@ -84,6 +87,31 @@ const UserProfile: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
   
+  // Empty states
+  const EmptyPhotos = () => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="rounded-full bg-cendy-gray p-3 mb-3">
+        <ImageIcon size={24} className="text-cendy-text-secondary" />
+      </div>
+      <h3 className="text-lg font-medium mb-1">No Photos Yet</h3>
+      <p className="text-sm text-cendy-text-secondary max-w-xs">
+        {profileUser.displayName} hasn't uploaded any photos yet.
+      </p>
+    </div>
+  );
+  
+  const EmptyInterests = () => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="rounded-full bg-cendy-gray p-3 mb-3">
+        <Heart size={24} className="text-cendy-text-secondary" />
+      </div>
+      <h3 className="text-lg font-medium mb-1">No Interests Added</h3>
+      <p className="text-sm text-cendy-text-secondary max-w-xs">
+        {profileUser.displayName} hasn't added any interests yet.
+      </p>
+    </div>
+  );
+  
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
       <Header 
@@ -98,11 +126,13 @@ const UserProfile: React.FC = () => {
       
       <main className="flex-1">
         {/* Profile Header */}
-        <div className="bg-white px-4 pt-4 pb-6">
-          <div className="flex items-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cendy-blue text-xl font-medium text-white">
-              {profileUser.displayName[0]}
-            </div>
+        <div className="bg-white px-4 pt-6 pb-6">
+          <div className="flex items-start">
+            <Avatar className="h-20 w-20 bg-cendy-blue text-white text-xl">
+              <AvatarFallback>
+                {profileUser.displayName[0]}
+              </AvatarFallback>
+            </Avatar>
             
             <div className="ml-4 flex-1">
               <h1 className="text-xl font-bold text-cendy-text">{profileUser.displayName}</h1>
@@ -116,15 +146,15 @@ const UserProfile: React.FC = () => {
                 <Calendar size={16} className="text-cendy-text-secondary mr-1" />
                 <p className="text-sm text-cendy-text-secondary">Joined {formatJoinDate(profileUser.joinedAt)}</p>
               </div>
+              
+              <button
+                onClick={handleMessageClick}
+                className="mt-3 flex items-center justify-center rounded-full bg-cendy-blue px-4 py-2 text-sm font-medium text-white hover:bg-cendy-blue/90"
+              >
+                <MessageCircle size={16} className="mr-1" />
+                Message
+              </button>
             </div>
-            
-            <button
-              onClick={handleMessageClick}
-              className="flex items-center justify-center rounded-full bg-cendy-blue px-4 py-2 text-sm font-medium text-white hover:bg-cendy-blue/90"
-            >
-              <MessageCircle size={16} className="mr-1" />
-              Message
-            </button>
           </div>
           
           {/* Bio */}
@@ -133,45 +163,87 @@ const UserProfile: React.FC = () => {
               <p className="text-sm text-cendy-text">{profileUser.bio}</p>
             </div>
           )}
-          
-          {/* Interests */}
-          {profileUser.interests && profileUser.interests.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {profileUser.interests.map((interest, index) => (
-                <div 
-                  key={index} 
-                  className="rounded-full bg-cendy-gray-medium px-3 py-1 text-xs font-medium text-cendy-text"
-                >
-                  {interest}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
         
         <Separator />
         
-        {/* Photos Section */}
-        {profileUser.photos && profileUser.photos.length > 0 && (
-          <div className="bg-white px-4 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-cendy-text">Photos</h2>
-              <button className="text-cendy-blue text-sm">See all</button>
-            </div>
+        {/* Tabs Section */}
+        <div className="bg-white">
+          <Tabs defaultValue="photos" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-3 bg-cendy-gray-medium/20">
+              <TabsTrigger value="photos" className="data-[state=active]:bg-white">
+                Photos
+              </TabsTrigger>
+              <TabsTrigger value="interests" className="data-[state=active]:bg-white">
+                Interests
+              </TabsTrigger>
+              <TabsTrigger value="about" className="data-[state=active]:bg-white">
+                About
+              </TabsTrigger>
+            </TabsList>
             
-            <div className="grid grid-cols-3 gap-2">
-              {profileUser.photos.map((photo, index) => (
-                <div key={index} className="aspect-square overflow-hidden rounded-md">
-                  <img 
-                    src={photo} 
-                    alt={`${profileUser.displayName}'s photo ${index + 1}`} 
-                    className="h-full w-full object-cover"
-                  />
+            <TabsContent value="photos" className="p-4">
+              {profileUser.photos && profileUser.photos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {profileUser.photos.map((photo, index) => (
+                    <div key={index} className="aspect-square overflow-hidden rounded-md">
+                      <img 
+                        src={photo} 
+                        alt={`${profileUser.displayName}'s photo ${index + 1}`} 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              ) : (
+                <EmptyPhotos />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="interests" className="p-4">
+              {profileUser.interests && profileUser.interests.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profileUser.interests.map((interest, index) => (
+                    <div 
+                      key={index} 
+                      className="rounded-full bg-cendy-gray-medium/30 px-3 py-1.5 text-sm font-medium text-cendy-text"
+                    >
+                      {interest}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyInterests />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="about" className="p-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">Display Name</h3>
+                  <p className="text-base text-cendy-text">{profileUser.displayName}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">University</h3>
+                  <p className="text-base text-cendy-text">{profileUser.university}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">Member Since</h3>
+                  <p className="text-base text-cendy-text">{formatJoinDate(profileUser.joinedAt)}</p>
+                </div>
+                
+                {profileUser.bio && (
+                  <div>
+                    <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">Bio</h3>
+                    <p className="text-base text-cendy-text">{profileUser.bio}</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </main>
     </div>
   );
