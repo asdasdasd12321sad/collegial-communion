@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoginButton from '@/components/auth/LoginButton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Mail, Apple, MailIcon, UserPlus } from 'lucide-react';
+import { ChevronDown, Mail, MailIcon, UserPlus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 
@@ -214,85 +214,85 @@ const Login: React.FC = () => {
           
           <TabsContent value="signup" className="mt-4">
             <div className="space-y-4">
+              <form onSubmit={handleEmailSignUp} className="space-y-4">
+                <div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                    className="w-full rounded-xl border border-cendy-gray-medium px-4 py-3 focus:border-cendy-blue focus:outline-none focus:ring-1 focus:ring-cendy-blue"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    className="w-full rounded-xl border border-cendy-gray-medium px-4 py-3 focus:border-cendy-blue focus:outline-none focus:ring-1 focus:ring-cendy-blue"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm Password"
+                    className="w-full rounded-xl border border-cendy-gray-medium px-4 py-3 focus:border-cendy-blue focus:outline-none focus:ring-1 focus:ring-cendy-blue"
+                    required
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-cendy-blue px-4 py-3 font-medium text-white transition-all duration-300 hover:bg-cendy-blue-dark focus:outline-none focus:ring-2 focus:ring-cendy-blue focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isLoading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <>
+                      <UserPlus size={20} />
+                      <span>Sign Up with Email</span>
+                    </>
+                  )}
+                </button>
+              </form>
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-cendy-gray-medium"></span>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-2 text-cendy-text-secondary">Or continue with</span>
+                </div>
+              </div>
+              
               <LoginButton
                 onClick={handleGoogleLogin}
                 icon={<GoogleIcon />}
-                label="Sign up with Google"
+                label="Continue with Google"
                 isLoading={isLoading}
               />
               
               <LoginButton
                 onClick={handleMicrosoftLogin}
                 icon={<MicrosoftIcon />}
-                label="Sign up with Microsoft"
+                label="Continue with Microsoft"
                 isLoading={isLoading}
               />
               
               <LoginButton
                 onClick={handleAppleLogin}
                 icon={<Apple size={20} />}
-                label="Sign up with Apple"
+                label="Continue with Apple"
                 isLoading={isLoading}
               />
-              
-              <Collapsible open={isOtherOptionsOpen} onOpenChange={setIsOtherOptionsOpen} className="space-y-4 pt-2">
-                <CollapsibleTrigger className="flex w-full items-center justify-center gap-1 text-sm text-cendy-text-secondary">
-                  Other options
-                  <ChevronDown size={16} className={`transition-transform duration-300 ${isOtherOptionsOpen ? 'rotate-180' : ''}`} />
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent className="space-y-4">
-                  <form onSubmit={handleEmailSignUp} className="space-y-4">
-                    <div>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Email"
-                        className="w-full rounded-xl border border-cendy-gray-medium px-4 py-3 focus:border-cendy-blue focus:outline-none focus:ring-1 focus:ring-cendy-blue"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password"
-                        className="w-full rounded-xl border border-cendy-gray-medium px-4 py-3 focus:border-cendy-blue focus:outline-none focus:ring-1 focus:ring-cendy-blue"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm Password"
-                        className="w-full rounded-xl border border-cendy-gray-medium px-4 py-3 focus:border-cendy-blue focus:outline-none focus:ring-1 focus:ring-cendy-blue"
-                        required
-                      />
-                    </div>
-                    
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-cendy-blue px-4 py-3 font-medium text-white transition-all duration-300 hover:bg-cendy-blue-dark focus:outline-none focus:ring-2 focus:ring-cendy-blue focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {isLoading ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      ) : (
-                        <>
-                          <UserPlus size={20} />
-                          <span>Sign Up with Email</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </CollapsibleContent>
-              </Collapsible>
             </div>
           </TabsContent>
         </Tabs>

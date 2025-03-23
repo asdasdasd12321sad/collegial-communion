@@ -1,31 +1,18 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { 
-  GoogleAuthProvider, 
-  OAuthProvider, 
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { auth } from '../config/firebase';
-import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, Provider } from '@supabase/supabase-js';
+import { supabase, isAllowedDomain, extractUniversityFromEmail } from '@/config/supabase';
 
-// List of allowed college email domains for verification
-const ALLOWED_DOMAINS = [
-  'edu',
-  'college.edu',
-  'university.edu',
-  'student.edu',
-  // Add more college domains as needed
-];
+// Create a User type that matches what we expect in the app
+export interface AppUser extends User {
+  displayName?: string;
+  verificationStatus?: 'verified' | 'unverified';
+  university?: string | null;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   profile: any;
   isLoading: boolean;
   loginWithGoogle: () => Promise<void>;
@@ -33,111 +20,46 @@ interface AuthContextType {
   loginWithApple: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  setDisplayName: (name: string) => void;
+  logout: () => Promise<void>;
+  setDisplayName: (name: string) => Promise<void>;
   needsDisplayName: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [needsDisplayName, setNeedsDisplayName] = useState<boolean>(false);
 
-  // Helper to check if email domain is allowed for verification
-  const isAllowedDomain = (email: string): boolean => {
-    return ALLOWED_DOMAINS.some(domain => email.toLowerCase().endsWith(domain));
-  };
-
-  // Helper to extract university from email
-  const extractUniversityFromEmail = (email: string): string | null => {
-    // Extract the domain from the email
-    const domainMatch = email.match(/@([^.]+)/);
-    if (!domainMatch) return null;
-    
-    const domain = domainMatch[1].toLowerCase();
-    
-    // Map domain to university name (simplified example)
-    const universityMap: Record<string, string> = {
-      'harvard': 'Harvard University',
-      'stanford': 'Stanford University',
-      'mit': 'MIT',
-      'princeton': 'Princeton University',
-      'berkeley': 'UC Berkeley',
-      'yale': 'Yale University',
-      'columbia': 'Columbia University',
-      'cornell': 'Cornell University',
-      'upenn': 'UPenn',
-      'college': 'Sample College',
-      'university': 'Sample University',
-      'student': 'Sample School'
-    };
-    
-    return universityMap[domain] || 'Unknown University';
-  };
-
   // Set up authentication state listeners
   useEffect(() => {
     setIsLoading(true);
 
-    // Firebase auth state listener
-    const unsubscribeFirebase = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // Sign in to Supabase with custom token
-          const { email, uid, displayName } = firebaseUser;
-          
-          // Get a custom token from Firebase user
-          const idToken = await firebaseUser.getIdToken();
-          
-          // Sign in to Supabase with custom token
-          const { data, error } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: idToken,
-          });
-          
-          if (error) {
-            throw error;
-          }
-          
-          if (data) {
-            setSession(data.session);
-            setUser(data.user);
-            
-            // Fetch user profile
-            if (data.user) {
-              fetchUserProfile(data.user.id);
-            }
-          }
-        } catch (error) {
-          console.error("Error syncing Firebase auth with Supabase:", error);
-          toast({
-            title: "Authentication Error",
-            description: "There was an issue with your account. Please try again.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        // User is signed out of Firebase
-        setUser(null);
-        setProfile(null);
-        setSession(null);
-      }
-      
-      setIsLoading(false);
-    });
-
-    // Supabase auth state listener as backup
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (session) {
           setSession(session);
-          setUser(session.user);
+          
+          // Create an enhanced user object with our additional properties
+          const enhancedUser: AppUser = {
+            ...session.user,
+            displayName: profile?.display_name || 'User',
+            verificationStatus: 
+              session.user.email && isAllowedDomain(session.user.email) 
+                ? 'verified' 
+                : 'unverified',
+            university: profile?.university || 
+              (session.user.email ? extractUniversityFromEmail(session.user.email) : null)
+          };
+          
+          setUser(enhancedUser);
+          
           if (session.user) {
-            fetchUserProfile(session.user.id);
+            await fetchUserProfile(session.user.id);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -148,22 +70,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Check for existing Supabase session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         setSession(session);
-        setUser(session.user);
+        
         if (session.user) {
-          fetchUserProfile(session.user.id);
+          await fetchUserProfile(session.user.id);
+          
+          // Create an enhanced user object with our additional properties
+          const enhancedUser: AppUser = {
+            ...session.user,
+            displayName: profile?.display_name || 'User',
+            verificationStatus: 
+              session.user.email && isAllowedDomain(session.user.email) 
+                ? 'verified' 
+                : 'unverified',
+            university: profile?.university || 
+              (session.user.email ? extractUniversityFromEmail(session.user.email) : null)
+          };
+          
+          setUser(enhancedUser);
         }
       }
       setIsLoading(false);
     });
 
     return () => {
-      unsubscribeFirebase();
       subscription.unsubscribe();
     };
   }, []);
+
+  // Update user properties when profile changes
+  useEffect(() => {
+    if (user && profile) {
+      setUser({
+        ...user,
+        displayName: profile.display_name || 'User',
+        university: profile.university || 
+          (user.email ? extractUniversityFromEmail(user.email) : null)
+      });
+      
+      setNeedsDisplayName(!profile.display_name || profile.display_name === 'User');
+    }
+  }, [profile]);
 
   // Fetch user profile from Supabase
   const fetchUserProfile = async (userId: string) => {
@@ -192,40 +141,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      
-      // The signed-in user info
-      const firebaseUser = result.user;
-      
-      if (!firebaseUser.email || !isAllowedDomain(firebaseUser.email)) {
-        // If not a valid educational email, sign out and show error
-        await firebaseSignOut(auth);
-        
-        toast({
-          title: "Authentication Error",
-          description: "Please log in with your student email address.",
-          variant: "destructive",
-        });
-        
-        setIsLoading(false);
-        return;
-      }
-      
-      // If we got here, the user authenticated successfully with a valid email
-      toast({
-        title: "Authentication Successful",
-        description: "You have successfully logged in.",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/home'
+        }
       });
       
-    } catch (error) {
+      if (error) throw error;
+      
+      // Success will redirect to the OAuth provider
+      // and then back to the app
+      
+    } catch (error: any) {
       console.error("Google login error:", error);
       toast({
         title: "Authentication Error",
         description: "Failed to login with Google. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -235,40 +169,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const provider = new OAuthProvider('microsoft.com');
-      const result = await signInWithPopup(auth, provider);
-      
-      // The signed-in user info
-      const firebaseUser = result.user;
-      
-      if (!firebaseUser.email || !isAllowedDomain(firebaseUser.email)) {
-        // If not a valid educational email, sign out and show error
-        await firebaseSignOut(auth);
-        
-        toast({
-          title: "Authentication Error",
-          description: "Please log in with your student email address.",
-          variant: "destructive",
-        });
-        
-        setIsLoading(false);
-        return;
-      }
-      
-      // If we got here, the user authenticated successfully with a valid email
-      toast({
-        title: "Authentication Successful",
-        description: "You have successfully logged in.",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'azure',
+        options: {
+          redirectTo: window.location.origin + '/home'
+        }
       });
       
-    } catch (error) {
+      if (error) throw error;
+      
+      // Success will redirect to the OAuth provider
+      // and then back to the app
+      
+    } catch (error: any) {
       console.error("Microsoft login error:", error);
       toast({
         title: "Authentication Error",
         description: "Failed to login with Microsoft. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -278,23 +197,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const provider = new OAuthProvider('apple.com');
-      const result = await signInWithPopup(auth, provider);
-      
-      // For Apple login, we don't verify email domains because Apple often uses private relay
-      toast({
-        title: "Authentication Successful",
-        description: "You have successfully logged in with Apple.",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: window.location.origin + '/home'
+        }
       });
       
-    } catch (error) {
+      if (error) throw error;
+      
+      // Success will redirect to the OAuth provider
+      // and then back to the app
+      
+    } catch (error: any) {
       console.error("Apple login error:", error);
       toast({
         title: "Authentication Error",
         description: "Failed to login with Apple. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -309,8 +230,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Email and password are required");
       }
       
-      // Sign in with Firebase
-      await signInWithEmailAndPassword(auth, email, password);
+      // Sign in with Supabase
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
       
       toast({
         title: "Login Successful",
@@ -321,11 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Email login error:", error);
       
       let errorMessage = "Failed to login. Please try again.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMessage = "Invalid email or password. Please try again.";
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = "Too many failed login attempts. Please try again later.";
-      } else if (error.message) {
+      if (error.message) {
         errorMessage = error.message;
       }
       
@@ -357,8 +279,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if the email is from an allowed domain for verification
       const isVerified = isAllowedDomain(email);
       
-      // Create user with Firebase
-      await createUserWithEmailAndPassword(auth, email, password);
+      // Create user with Supabase
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: 'User',
+            verification_status: isVerified ? 'verified' : 'unverified',
+            university: extractUniversityFromEmail(email)
+          }
+        }
+      });
+      
+      if (error) throw error;
       
       toast({
         title: "Sign Up Successful",
@@ -367,19 +301,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : "Your account has been created, but you need to verify your student status.",
       });
       
-      // User will be automatically logged in by Firebase's onAuthStateChanged
-      
     } catch (error: any) {
       console.error("Email signup error:", error);
       
       let errorMessage = "Failed to sign up. Please try again.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "This email is already in use. Please log in or use a different email.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Invalid email address. Please check and try again.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password is too weak. Please use a stronger password.";
-      } else if (error.message) {
+      if (error.message) {
         errorMessage = error.message;
       }
       
@@ -411,6 +337,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Update local state
       setProfile(prev => ({ ...prev, display_name: name }));
+      setUser(prev => prev ? { ...prev, displayName: name } : null);
       setNeedsDisplayName(false);
       
       toast({
@@ -429,13 +356,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Logout
-  const logout = async (): void => {
+  const logout = async (): Promise<void> => {
     try {
-      // Sign out from Firebase
-      await firebaseSignOut(auth);
-      
       // Sign out from Supabase
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) throw error;
       
       // Clear local state
       setUser(null);
