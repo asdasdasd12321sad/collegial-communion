@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoginButton from '@/components/auth/LoginButton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Mail, MailIcon, UserPlus } from 'lucide-react';
+import { Apple, ChevronDown, Mail, MailIcon, UserPlus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 
