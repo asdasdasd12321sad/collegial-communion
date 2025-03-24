@@ -126,24 +126,31 @@ const EditProfile: React.FC = () => {
     }
   };
 
+  const handleGoBack = () => {
+    navigate('/settings');
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <Header 
-        title="Edit Profile" 
-        centerTitle={true} 
-        leftIcon={<ChevronLeft size={24} onClick={() => navigate('/settings')} />}
-        rightIcon={
-          isSubmitting ? (
+      <div className="sticky top-0 z-10 flex h-16 items-center justify-between bg-white px-4 shadow-sm">
+        <div className="flex items-center">
+          <button onClick={handleGoBack} className="mr-4">
+            <ChevronLeft size={24} />
+          </button>
+          <h1 className="text-lg font-semibold">Edit Profile</h1>
+        </div>
+        <button 
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="text-cendy-blue"
+        >
+          {isSubmitting ? (
             <Loader2 className="h-6 w-6 animate-spin" />
           ) : (
-            <Check 
-              size={24} 
-              className="text-cendy-blue" 
-              onClick={handleSubmit} 
-            />
-          )
-        }
-      />
+            <Check size={24} />
+          )}
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit} className="flex-1 p-4">
         <div className="mb-6 flex flex-col items-center">

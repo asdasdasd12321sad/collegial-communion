@@ -1,171 +1,153 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/layout/Header';
-import BottomNavigation from '@/components/layout/BottomNavigation';
-import { ChevronLeft } from 'lucide-react';
+import { Bell, BellOff, ChevronLeft, User } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import BottomNavigation from '@/components/layout/BottomNavigation';
 import { toast } from '@/hooks/use-toast';
 
 const Notifications: React.FC = () => {
   const navigate = useNavigate();
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [messageNotifications, setMessageNotifications] = useState(true);
+  const [communityNotifications, setCommunityNotifications] = useState(true);
+  const [confessionNotifications, setConfessionNotifications] = useState(true);
   
-  // State for notification preferences
-  const [preferences, setPreferences] = useState({
-    messages: true,
-    confessions: true,
-    comments: true,
-    mentions: true,
-    reactions: true,
-    communityPosts: true,
-    newFollowers: true,
-    appUpdates: false,
-    emails: false,
-  });
-
-  const handleToggle = (setting: keyof typeof preferences) => {
-    setPreferences(prev => {
-      const newPreferences = { ...prev, [setting]: !prev[setting] };
-      
-      // In a real app, we would save this to the database
-      // For now, we'll just show a toast
-      toast({
-        title: "Notification Setting Updated",
-        description: `${setting} notifications ${newPreferences[setting] ? 'enabled' : 'disabled'}.`,
-      });
-      
-      return newPreferences;
+  const toggleNotification = (
+    setting: boolean, 
+    setSetting: React.Dispatch<React.SetStateAction<boolean>>,
+    type: string
+  ) => {
+    setSetting(!setting);
+    toast({
+      title: `${type} notifications ${!setting ? 'enabled' : 'disabled'}`,
+      description: `You will ${!setting ? 'now' : 'no longer'} receive ${type.toLowerCase()} notifications.`
     });
   };
 
-  // Component for a notification setting
-  const NotificationSetting = ({ 
-    id, 
-    label, 
-    description,
-    value,
-    onChange 
-  }: { 
-    id: keyof typeof preferences; 
-    label: string; 
-    description?: string;
-    value: boolean;
-    onChange: () => void;
-  }) => (
-    <div className="flex items-center justify-between py-3">
-      <div>
-        <label htmlFor={id} className="text-sm font-medium text-cendy-text">
-          {label}
-        </label>
-        {description && (
-          <p className="text-xs text-cendy-text-secondary">{description}</p>
-        )}
-      </div>
-      <Switch
-        id={id}
-        checked={value}
-        onCheckedChange={onChange}
-      />
-    </div>
-  );
+  const handleGoBack = () => {
+    navigate('/settings');
+  };
 
   return (
-    <div className="flex min-h-screen flex-col bg-cendy-gray">
-      <Header 
-        title="Notifications" 
-        centerTitle={true} 
-        leftIcon={<ChevronLeft size={24} onClick={() => navigate('/settings')} />}
-      />
-      
-      <main className="flex-1 p-4 max-w-lg mx-auto w-full">
-        <div className="rounded-lg bg-white p-4 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-cendy-text">Push Notifications</h2>
-          
-          <div className="space-y-1 divide-y divide-gray-100">
-            <NotificationSetting
-              id="messages"
-              label="Messages"
-              description="Get notified about new messages"
-              value={preferences.messages}
-              onChange={() => handleToggle('messages')}
-            />
+    <div className="flex min-h-screen flex-col bg-cendy-gray pb-16">
+      <div className="sticky top-0 z-10 flex h-16 items-center bg-white px-4 shadow-sm">
+        <button onClick={handleGoBack} className="mr-4">
+          <ChevronLeft size={24} />
+        </button>
+        <h1 className="text-lg font-semibold">Notifications</h1>
+      </div>
+
+      <div className="flex-1 p-4">
+        <div className="space-y-4">
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold">Notification Settings</h2>
             
-            <NotificationSetting
-              id="confessions"
-              label="Confessions"
-              description="Updates on confessions you've interacted with"
-              value={preferences.confessions}
-              onChange={() => handleToggle('confessions')}
-            />
-            
-            <NotificationSetting
-              id="comments"
-              label="Comments"
-              description="When someone comments on your posts"
-              value={preferences.comments}
-              onChange={() => handleToggle('comments')}
-            />
-            
-            <NotificationSetting
-              id="mentions"
-              label="Mentions"
-              description="When someone mentions you"
-              value={preferences.mentions}
-              onChange={() => handleToggle('mentions')}
-            />
-            
-            <NotificationSetting
-              id="reactions"
-              label="Reactions"
-              description="When someone reacts to your posts"
-              value={preferences.reactions}
-              onChange={() => handleToggle('reactions')}
-            />
-            
-            <NotificationSetting
-              id="communityPosts"
-              label="Community Posts"
-              description="Updates from your university community"
-              value={preferences.communityPosts}
-              onChange={() => handleToggle('communityPosts')}
-            />
-            
-            <NotificationSetting
-              id="newFollowers"
-              label="New Followers"
-              description="When someone follows you"
-              value={preferences.newFollowers}
-              onChange={() => handleToggle('newFollowers')}
-            />
-            
-            <NotificationSetting
-              id="appUpdates"
-              label="App Updates"
-              description="New features and improvements"
-              value={preferences.appUpdates}
-              onChange={() => handleToggle('appUpdates')}
-            />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-cendy-blue bg-opacity-10 p-2">
+                    <Bell size={20} className="text-cendy-blue" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Push Notifications</p>
+                    <p className="text-sm text-cendy-text-secondary">
+                      Receive notifications on your device
+                    </p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={pushNotifications} 
+                  onCheckedChange={() => toggleNotification(pushNotifications, setPushNotifications, 'Push')} 
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-cendy-blue bg-opacity-10 p-2">
+                    <User size={20} className="text-cendy-blue" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Email Notifications</p>
+                    <p className="text-sm text-cendy-text-secondary">
+                      Receive important updates via email
+                    </p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={emailNotifications} 
+                  onCheckedChange={() => toggleNotification(emailNotifications, setEmailNotifications, 'Email')} 
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div className="mt-4 rounded-lg bg-white p-4 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-cendy-text">Email Notifications</h2>
           
-          <div className="space-y-1">
-            <NotificationSetting
-              id="emails"
-              label="Email Notifications"
-              description="Receive updates via email (weekly digest)"
-              value={preferences.emails}
-              onChange={() => handleToggle('emails')}
-            />
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold">Content Notifications</h2>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Message Notifications</p>
+                  <p className="text-sm text-cendy-text-secondary">
+                    When someone sends you a message
+                  </p>
+                </div>
+                <Switch 
+                  checked={messageNotifications} 
+                  onCheckedChange={() => toggleNotification(messageNotifications, setMessageNotifications, 'Message')} 
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Community Posts</p>
+                  <p className="text-sm text-cendy-text-secondary">
+                    Updates from community activities
+                  </p>
+                </div>
+                <Switch 
+                  checked={communityNotifications} 
+                  onCheckedChange={() => toggleNotification(communityNotifications, setCommunityNotifications, 'Community')} 
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Confession Updates</p>
+                  <p className="text-sm text-cendy-text-secondary">
+                    When someone interacts with your confession
+                  </p>
+                </div>
+                <Switch 
+                  checked={confessionNotifications} 
+                  onCheckedChange={() => toggleNotification(confessionNotifications, setConfessionNotifications, 'Confession')} 
+                />
+              </div>
+            </div>
           </div>
+          
+          <button
+            onClick={() => {
+              setEmailNotifications(false);
+              setPushNotifications(false);
+              setMessageNotifications(false);
+              setCommunityNotifications(false);
+              setConfessionNotifications(false);
+              
+              toast({
+                title: "All notifications disabled",
+                description: "You will no longer receive any notifications.",
+              });
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3 text-red-600"
+          >
+            <BellOff size={16} />
+            <span>Disable All Notifications</span>
+          </button>
         </div>
-        
-        <p className="mt-4 text-xs text-cendy-text-secondary text-center">
-          You can change your notification preferences at any time.
-        </p>
-      </main>
+      </div>
       
       <BottomNavigation />
     </div>

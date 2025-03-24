@@ -94,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // First set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log("Auth state changed:", event);
         setSession(newSession);
         
         if (newSession?.user) {
@@ -104,8 +105,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } as User);
           
           // Check if user needs to set display name
-          if (event === 'SIGNED_IN' && profile && !profile.displayName) {
-            navigate('/set-display-name');
+          if (event === 'SIGNED_IN' && profile) {
+            if (!profile.displayName) {
+              navigate('/set-display-name');
+            } else {
+              // If user already has a display name, redirect to home
+              navigate('/home');
+            }
           }
         } else {
           setUser(null);
@@ -130,8 +136,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } as User);
         
         // Check if user needs to set display name
-        if (profile && !profile.displayName) {
-          navigate('/set-display-name');
+        if (profile) {
+          if (!profile.displayName) {
+            navigate('/set-display-name');
+          }
         }
       } else {
         setUser(null);
@@ -349,6 +357,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setDisplayName = async (displayName: string) => {
+    console.log("Setting display name:", displayName);
     return updateUserProfile({ displayName });
   };
 

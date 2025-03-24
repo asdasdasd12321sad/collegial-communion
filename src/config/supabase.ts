@@ -19,6 +19,7 @@ export const ALLOWED_DOMAINS = [
   'college.edu',
   'university.edu',
   'student.edu',
+  'student.tdtu.edu.vn',
   // Add more college domains as needed
 ];
 
@@ -48,7 +49,8 @@ export const extractUniversityFromEmail = (email: string): string | null => {
     'upenn': 'UPenn',
     'college': 'Sample College',
     'university': 'Sample University',
-    'student': 'Sample School'
+    'student': 'Sample School',
+    'tdtu': 'Ton Duc Thang University'
   };
   
   return universityMap[domain] || 'Unknown University';

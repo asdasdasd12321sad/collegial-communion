@@ -39,9 +39,11 @@ const Routes = () => {
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
 
+      {/* Display name form route */}
+      <Route path="/set-display-name" element={<ProtectedRoute><DisplayNameForm /></ProtectedRoute>} />
+
       {/* Routes that require authentication */}
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-      <Route path="/set-display-name" element={<ProtectedRoute><DisplayNameForm /></ProtectedRoute>} />
       <Route path="/confession" element={<ProtectedRoute><Confession /></ProtectedRoute>} />
       <Route path="/confession/search" element={<ProtectedRoute><ConfessionSearch /></ProtectedRoute>} />
       <Route path="/forum" element={<ProtectedRoute><Forum /></ProtectedRoute>} />
