@@ -1,271 +1,147 @@
-import React, { useState } from 'react';
-import { ArrowLeft, MessageCircle, Calendar, School, ImageIcon, Heart } from 'lucide-react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from '@/hooks/use-toast';
+import { Settings, Edit, Loader2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
-import { formatDistanceToNow } from 'date-fns';
-
-const SAMPLE_USERS = [
-  {
-    id: '1',
-    displayName: 'Alex Thompson',
-    university: 'Harvard University',
-    bio: 'Computer Science major. Coffee enthusiast. Always coding something new!',
-    joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365).toISOString(), // 1 year ago
-    photos: [
-      "https://images.unsplash.com/photo-1472213984618-c79aaec300c1",
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87"
-    ],
-    interests: ['Coding', 'Coffee', 'Gaming', 'Hiking'],
-    verificationStatus: 'verified',
-    authProvider: 'google'
-  },
-  {
-    id: '2',
-    displayName: 'Jamie Wilson',
-    university: 'Stanford University',
-    bio: 'Biology major. Love hiking and nature photography.',
-    joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180).toISOString(), // 6 months ago
-    photos: [
-      "https://images.unsplash.com/photo-1501854140801-50d01698950b"
-    ],
-    interests: ['Biology', 'Photography', 'Hiking', 'Reading'],
-    verificationStatus: 'verified',
-    authProvider: 'microsoft'
-  },
-  {
-    id: '3',
-    displayName: 'Riley Evans',
-    university: 'MIT',
-    bio: 'Computer Engineering student. Passionate about AI and machine learning.',
-    joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90).toISOString(), // 3 months ago
-    photos: [
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87",
-      "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2"
-    ],
-    interests: ['AI', 'Machine Learning', 'Robotics', 'Reading'],
-    verificationStatus: 'unverified',
-    authProvider: 'email'
-  }
-];
+import BottomNavigation from '@/components/layout/BottomNavigation';
 
 const UserProfile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const isVerified = user?.verificationStatus === 'verified';
-  const [activeTab, setActiveTab] = useState<ProfileTab>("photos");
+  const { user, updateUserProfile } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [newBio, setNewBio] = useState(user?.bio || '');
   
-  const profileUser = SAMPLE_USERS.find(u => u.id === userId) || SAMPLE_USERS[0];
-  
-  const handleBackClick = () => {
-    navigate(-1);
-  };
-  
-  const handleMessageClick = () => {
-    if (!isVerified) {
-      toast({
-        title: "Verification Required",
-        description: "Only verified users can send messages.",
-        variant: "default",
-      });
-      return;
+  useEffect(() => {
+    if (user) {
+      setIsLoading(false);
     }
-    
-    toast({
-      title: "Start Conversation",
-      description: `Starting conversation with ${profileUser.displayName}`,
-    });
-    
-    navigate('/messages');
+  }, [user]);
+  
+  const handleEditBio = () => {
+    setIsEditingBio(true);
   };
   
-  const formatJoinDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return formatDistanceToNow(date, { addSuffix: true });
+  const handleSaveBio = async () => {
+    try {
+      await updateUserProfile({ bio: newBio });
+      setIsEditingBio(false);
+      toast({
+        title: "Bio Updated",
+        description: "Your bio has been updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating bio:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update bio. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
-  const getVerificationBadge = (status?: string) => {
-    return status === 'verified' ? (
-      <span className="inline-flex items-center ml-1 text-cendy-blue">
-        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-        </svg>
-      </span>
-    ) : null;
+  const handleCancelEditBio = () => {
+    setNewBio(user?.bio || '');
+    setIsEditingBio(false);
   };
   
-  const EmptyPhotos = () => (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="rounded-full bg-cendy-gray p-3 mb-3">
-        <ImageIcon size={24} className="text-cendy-text-secondary" />
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
       </div>
-      <h3 className="text-lg font-medium mb-1">No Photos Yet</h3>
-      <p className="text-sm text-cendy-text-secondary max-w-xs">
-        {profileUser.displayName} hasn't uploaded any photos yet.
-      </p>
+    );
+  }
+  
+  const profileHeader = () => (
+    <div className="relative z-10 mt-2 flex flex-col items-center justify-center px-4 pb-5 pt-0">
+      <div className="relative mt-[-3rem] h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-cendy-gray-light shadow-md">
+        {user?.profilePictureUrl ? (
+          <img
+            src={user.profilePictureUrl}
+            alt={user.displayName || "User"}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-cendy-blue text-2xl font-bold text-white">
+            {user?.displayName ? user.displayName[0].toUpperCase() : "U"}
+          </div>
+        )}
+      </div>
+      
+      <h1 className="mt-2 text-xl font-semibold text-cendy-text">{user?.displayName || 'User'}</h1>
+      <h2 className="text-sm text-cendy-text-secondary">{user?.university || 'No University'}</h2>
     </div>
   );
   
-  const EmptyInterests = () => (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="rounded-full bg-cendy-gray p-3 mb-3">
-        <Heart size={24} className="text-cendy-text-secondary" />
+  const profileActions = () => (
+    <div className="flex items-center justify-end gap-2 px-4">
+      {user?.id === userId ? (
+        <a href="/settings" className="rounded-xl bg-cendy-blue px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-cendy-blue-dark focus:outline-none focus:ring-2 focus:ring-cendy-blue focus:ring-opacity-50">
+          <Settings size={16} className="inline-block align-middle mr-1" />
+          <span>Settings</span>
+        </a>
+      ) : (
+        <button className="rounded-xl bg-cendy-blue px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-cendy-blue-dark focus:outline-none focus:ring-2 focus:ring-cendy-blue focus:ring-opacity-50">
+          Message
+        </button>
+      )}
+    </div>
+  );
+  
+  const profileBio = () => (
+    <div className="bg-white rounded-2xl shadow-sm p-4 mt-4">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-semibold text-cendy-text">About Me</h3>
+        {user?.id === userId && !isEditingBio && (
+          <button onClick={handleEditBio} className="text-cendy-blue hover:text-cendy-blue-dark">
+            <Edit size={16} className="inline-block align-middle mr-1" />
+            Edit
+          </button>
+        )}
       </div>
-      <h3 className="text-lg font-medium mb-1">No Interests Added</h3>
-      <p className="text-sm text-cendy-text-secondary max-w-xs">
-        {profileUser.displayName} hasn't added any interests yet.
-      </p>
+      
+      {isEditingBio ? (
+        <div className="space-y-2">
+          <textarea
+            value={newBio}
+            onChange={(e) => setNewBio(e.target.value)}
+            className="w-full rounded-xl border border-cendy-gray-medium px-4 py-3 focus:border-cendy-blue focus:outline-none focus:ring-1 focus:ring-cendy-blue"
+            placeholder="Write something about yourself..."
+          />
+          <div className="flex justify-end gap-2">
+            <button onClick={handleCancelEditBio} className="rounded-xl bg-cendy-gray-light px-4 py-2 text-sm font-medium text-cendy-text-secondary transition-all duration-300 hover:bg-cendy-gray-medium focus:outline-none focus:ring-2 focus:ring-cendy-blue focus:ring-opacity-50">
+              Cancel
+            </button>
+            <button onClick={handleSaveBio} className="rounded-xl bg-cendy-blue px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-cendy-blue-dark focus:outline-none focus:ring-2 focus:ring-cendy-blue focus:ring-opacity-50">
+              Save
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-cendy-text-secondary">
+          {user?.bio || 'No bio yet.'}
+        </p>
+      )}
     </div>
   );
   
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
-      <Header 
-        title="Profile" 
-        centerTitle
-        leftElement={
-          <button onClick={handleBackClick} className="flex items-center text-cendy-text">
-            <ArrowLeft size={20} />
-          </button>
-        }
-      />
+      <Header title="Profile" centerTitle={true} />
       
-      <main className="flex-1">
-        <div className="bg-white px-4 pt-6 pb-6">
-          <div className="flex items-start">
-            <Avatar className="h-20 w-20 bg-cendy-blue text-white text-xl">
-              {profileUser.profilePictureUrl ? (
-                <AvatarImage src={profileUser.profilePictureUrl} alt={profileUser.displayName} />
-              ) : (
-                <AvatarFallback>{profileUser.displayName[0]}</AvatarFallback>
-              )}
-            </Avatar>
-            
-            <div className="ml-4 flex-1">
-              <h1 className="text-xl font-bold text-cendy-text flex items-center">
-                {profileUser.displayName}
-                {getVerificationBadge(profileUser.verificationStatus)}
-              </h1>
-              
-              <div className="flex items-center mt-1">
-                <School size={16} className="text-cendy-text-secondary mr-1" />
-                <p className="text-sm text-cendy-text-secondary">{profileUser.university}</p>
-              </div>
-              
-              <div className="flex items-center mt-1">
-                <Calendar size={16} className="text-cendy-text-secondary mr-1" />
-                <p className="text-sm text-cendy-text-secondary">Joined {formatJoinDate(profileUser.joinedAt)}</p>
-              </div>
-              
-              <button
-                onClick={handleMessageClick}
-                className="mt-3 flex items-center justify-center rounded-full bg-cendy-blue px-4 py-2 text-sm font-medium text-white hover:bg-cendy-blue/90"
-              >
-                <MessageCircle size={16} className="mr-1" />
-                Message
-              </button>
-            </div>
-          </div>
-          
-          {profileUser.bio && (
-            <div className="mt-4">
-              <p className="text-sm text-cendy-text">{profileUser.bio}</p>
-            </div>
-          )}
-        </div>
-        
-        <Separator />
-        
-        <div className="bg-white">
-          <Tabs defaultValue="photos" value={activeTab} onValueChange={setActiveTab as (value: string) => void} className="w-full">
-            <TabsList className="w-full grid grid-cols-3 bg-cendy-gray-medium/20">
-              <TabsTrigger value="photos" className="data-[state=active]:bg-white">
-                Photos
-              </TabsTrigger>
-              <TabsTrigger value="interests" className="data-[state=active]:bg-white">
-                Interests
-              </TabsTrigger>
-              <TabsTrigger value="about" className="data-[state=active]:bg-white">
-                About
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="photos" className="p-4">
-              {profileUser.photos && profileUser.photos.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {profileUser.photos.map((photo, index) => (
-                    <div key={index} className="aspect-square overflow-hidden rounded-md">
-                      <img 
-                        src={photo} 
-                        alt={`${profileUser.displayName}'s photo ${index + 1}`} 
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyPhotos />
-              )}
-            </TabsContent>
-            
-            <TabsContent value="interests" className="p-4">
-              {profileUser.interests && profileUser.interests.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profileUser.interests.map((interest, index) => (
-                    <div 
-                      key={index} 
-                      className="rounded-full bg-cendy-gray-medium/30 px-3 py-1.5 text-sm font-medium text-cendy-text"
-                    >
-                      {interest}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyInterests />
-              )}
-            </TabsContent>
-            
-            <TabsContent value="about" className="p-4">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">Display Name</h3>
-                  <p className="text-base text-cendy-text">{profileUser.displayName}</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">University</h3>
-                  <p className="text-base text-cendy-text">{profileUser.university}</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">Member Since</h3>
-                  <p className="text-base text-cendy-text">{formatJoinDate(profileUser.joinedAt)}</p>
-                </div>
-                
-                {profileUser.bio && (
-                  <div>
-                    <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">Bio</h3>
-                    <p className="text-base text-cendy-text">{profileUser.bio}</p>
-                  </div>
-                )}
-                
-                <div>
-                  <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">Account Status</h3>
-                  <p className="text-base text-cendy-text flex items-center">
-                    {profileUser.verificationStatus === 'verified' ? 'Verified' : 'Unverified'} 
-                    {getVerificationBadge(profileUser.verificationStatus)}
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+      <div className="relative">
+        <div className="bg-cendy-blue h-32"></div>
+        {profileHeader()}
+        {profileActions()}
+      </div>
+      
+      <main className="flex-1 p-4">
+        {profileBio()}
       </main>
+      
+      <BottomNavigation />
     </div>
   );
 };

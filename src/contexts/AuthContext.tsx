@@ -10,10 +10,17 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithMicrosoft: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (updates: Partial<User>) => Promise<void>;
+  setDisplayName: (displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -113,7 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(data.session);
       
       // Redirect to home page after successful login
-      navigate('/');
+      navigate('/home');
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
@@ -123,6 +130,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Add alias for login for compatibility with UI
+  const loginWithEmail = login;
+
+  const loginWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'Failed to login with Google. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const loginWithMicrosoft = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'azure',
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Microsoft login error:', error);
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'Failed to login with Microsoft. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const loginWithApple = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Apple login error:', error);
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'Failed to login with Apple. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -162,6 +220,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Add alias for signUp for compatibility with UI
+  const signUpWithEmail = async (email: string, password: string) => {
+    // For now, use email as display name if not provided
+    await signUp(email, password, email.split('@')[0]);
+  };
+
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -170,7 +234,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setSession(null);
       
-      // Redirect is handled by the auth state change listener
+      // Navigate to login page
+      navigate('/login');
     } catch (error: any) {
       console.error('Logout error:', error);
       toast({
@@ -218,16 +283,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const setDisplayName = async (displayName: string) => {
+    await updateUserProfile({ displayName });
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
         loading,
+        isLoading: loading, // Alias for backward compatibility
         login,
+        loginWithEmail,
+        loginWithGoogle,
+        loginWithMicrosoft,
+        loginWithApple,
         signUp,
+        signUpWithEmail,
         logout,
         updateUserProfile,
+        setDisplayName,
       }}
     >
       {children}

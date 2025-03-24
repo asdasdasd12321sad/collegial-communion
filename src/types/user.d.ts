@@ -10,8 +10,8 @@ interface User {
   verificationStatus?: UserVerificationStatus;
   university?: string | null;
   bio?: string;
-  profilePictureUrl?: string; // Changed from profilePicture
-  createdAt?: string; // Changed from joinedAt
+  profilePictureUrl?: string;
+  createdAt?: string;
   interests?: string[];
   photos?: string[];
   authProvider?: AuthProvider;
@@ -19,7 +19,7 @@ interface User {
   lastLogin?: string;
 }
 
-// Update post interface for the new structure
+// Post interface types
 interface Post {
   id: string;
   title: string;
@@ -72,4 +72,22 @@ interface SettingItem {
 interface SettingsSection {
   title: string;
   items: SettingItem[];
+}
+
+// Auth context type
+interface AuthContextType {
+  user: User | null;
+  session: any | null;
+  loading: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithMicrosoft: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
+  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateUserProfile: (updates: Partial<User>) => Promise<void>;
+  setDisplayName: (displayName: string) => Promise<void>;
 }
