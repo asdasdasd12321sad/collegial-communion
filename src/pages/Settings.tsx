@@ -28,12 +28,23 @@ const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   
-  const handleLogout = () => {
-    logout();
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      // Redirect to login page after logout
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   const formatJoinDate = (dateString?: string) => {
@@ -89,8 +100,8 @@ const Settings: React.FC = () => {
         
         <div className="flex items-center mb-4">
           <Avatar className="h-14 w-14 bg-cendy-blue text-white">
-            {user?.profilePicture ? (
-              <AvatarImage src={user.profilePicture} alt={user?.displayName || 'Profile'} />
+            {user?.profilePictureUrl ? (
+              <AvatarImage src={user.profilePictureUrl} alt={user?.displayName || 'Profile'} />
             ) : (
               <AvatarFallback>
                 {user?.displayName?.[0] || 'U'}
@@ -112,7 +123,7 @@ const Settings: React.FC = () => {
             )}
             <div className="text-sm text-cendy-text-secondary flex items-center mt-0.5">
               <Calendar size={14} className="mr-1" />
-              Joined {formatJoinDate(user?.joinedAt)}
+              Joined {formatJoinDate(user?.createdAt)}
             </div>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, MessageCircle, Calendar, School, ImageIcon, Heart } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,7 +9,6 @@ import { toast } from '@/hooks/use-toast';
 import Header from '@/components/layout/Header';
 import { formatDistanceToNow } from 'date-fns';
 
-// Sample user data - in a real app, this would come from an API
 const SAMPLE_USERS = [
   {
     id: '1',
@@ -62,7 +60,6 @@ const UserProfile: React.FC = () => {
   const isVerified = user?.verificationStatus === 'verified';
   const [activeTab, setActiveTab] = useState<ProfileTab>("photos");
   
-  // Find user by ID
   const profileUser = SAMPLE_USERS.find(u => u.id === userId) || SAMPLE_USERS[0];
   
   const handleBackClick = () => {
@@ -84,17 +81,14 @@ const UserProfile: React.FC = () => {
       description: `Starting conversation with ${profileUser.displayName}`,
     });
     
-    // Navigate to messages screen (in a real app, this would go to a specific chat)
     navigate('/messages');
   };
   
-  // Format the join date
   const formatJoinDate = (dateString: string) => {
     const date = new Date(dateString);
     return formatDistanceToNow(date, { addSuffix: true });
   };
   
-  // Get verification badge
   const getVerificationBadge = (status?: string) => {
     return status === 'verified' ? (
       <span className="inline-flex items-center ml-1 text-cendy-blue">
@@ -105,7 +99,6 @@ const UserProfile: React.FC = () => {
     ) : null;
   };
   
-  // Empty states
   const EmptyPhotos = () => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="rounded-full bg-cendy-gray p-3 mb-3">
@@ -143,16 +136,13 @@ const UserProfile: React.FC = () => {
       />
       
       <main className="flex-1">
-        {/* Profile Header */}
         <div className="bg-white px-4 pt-6 pb-6">
           <div className="flex items-start">
             <Avatar className="h-20 w-20 bg-cendy-blue text-white text-xl">
-              {profileUser.profilePicture ? (
-                <AvatarImage src={profileUser.profilePicture} alt={profileUser.displayName} />
+              {profileUser.profilePictureUrl ? (
+                <AvatarImage src={profileUser.profilePictureUrl} alt={profileUser.displayName} />
               ) : (
-                <AvatarFallback>
-                  {profileUser.displayName[0]}
-                </AvatarFallback>
+                <AvatarFallback>{profileUser.displayName[0]}</AvatarFallback>
               )}
             </Avatar>
             
@@ -182,7 +172,6 @@ const UserProfile: React.FC = () => {
             </div>
           </div>
           
-          {/* Bio */}
           {profileUser.bio && (
             <div className="mt-4">
               <p className="text-sm text-cendy-text">{profileUser.bio}</p>
@@ -192,7 +181,6 @@ const UserProfile: React.FC = () => {
         
         <Separator />
         
-        {/* Tabs Section */}
         <div className="bg-white">
           <Tabs defaultValue="photos" value={activeTab} onValueChange={setActiveTab as (value: string) => void} className="w-full">
             <TabsList className="w-full grid grid-cols-3 bg-cendy-gray-medium/20">

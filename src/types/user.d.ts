@@ -10,8 +10,8 @@ interface User {
   verificationStatus?: UserVerificationStatus;
   university?: string | null;
   bio?: string;
-  profilePicture?: string;
-  joinedAt?: string;
+  profilePictureUrl?: string; // Changed from profilePicture
+  createdAt?: string; // Changed from joinedAt
   interests?: string[];
   photos?: string[];
   authProvider?: AuthProvider;
@@ -19,6 +19,7 @@ interface User {
   lastLogin?: string;
 }
 
+// Update post interface for the new structure
 interface Post {
   id: string;
   title: string;

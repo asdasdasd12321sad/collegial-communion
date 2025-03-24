@@ -364,7 +364,6 @@ export type Database = {
       }
       posts: {
         Row: {
-          anonymous: boolean | null
           author_id: string | null
           chatroom_id: string | null
           content: string
@@ -376,7 +375,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          anonymous?: boolean | null
           author_id?: string | null
           chatroom_id?: string | null
           content: string
@@ -388,7 +386,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          anonymous?: boolean | null
           author_id?: string | null
           chatroom_id?: string | null
           content?: string
