@@ -1,14 +1,13 @@
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { User } from '../types/user';
 
+// Using interface instead of import to fix "not a module" error
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
+  session: any | null;
   loading: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -23,131 +22,103 @@ interface AuthContextType {
   setDisplayName: (displayName: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create context with a default empty implementation
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  loading: true,
+  isLoading: true,
+  login: async () => {},
+  loginWithEmail: async () => {},
+  loginWithGoogle: async () => {},
+  loginWithMicrosoft: async () => {},
+  loginWithApple: async () => {},
+  signUp: async () => {},
+  signUpWithEmail: async () => {},
+  logout: async () => {},
+  updateUserProfile: async () => {},
+  setDisplayName: async () => {},
+});
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Map Supabase user to our app's User type
-  const mapSupabaseUser = async (supabaseUser: SupabaseUser | null): Promise<User | null> => {
-    if (!supabaseUser) return null;
-
-    try {
-      // Fetch user profile from our profiles table
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', supabaseUser.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
-      }
-
-      return {
-        id: supabaseUser.id,
-        email: supabaseUser.email || undefined,
-        displayName: profile?.display_name,
-        verificationStatus: profile?.verification_status as UserVerificationStatus,
-        university: profile?.university,
-        bio: profile?.bio,
-        profilePictureUrl: profile?.profile_picture_url,
-        createdAt: profile?.created_at,
-        authProvider: profile?.auth_provider as AuthProvider,
-        blockStatus: profile?.block_status ? 'blocked' : 'active',
-        lastLogin: profile?.last_login
-      };
-    } catch (error) {
-      console.error('Error mapping user:', error);
-      return null;
-    }
-  };
-
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // First set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log('Auth state changed:', event);
-        
+      (event, newSession) => {
         setSession(newSession);
-        const newUser = newSession ? await mapSupabaseUser(newSession.user) : null;
-        setUser(newUser);
-        setLoading(false);
-        
-        // Handle logout
+        setUser(newSession?.user ? {
+          id: newSession.user.id,
+          email: newSession.user.email,
+          // Map other user properties as needed
+        } as User : null);
+
+        // Auto-redirect to login on signOut
         if (event === 'SIGNED_OUT') {
           navigate('/login');
         }
       }
     );
 
-    // THEN check for existing session
-    const checkSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
-      
-      if (currentSession) {
-        const mappedUser = await mapSupabaseUser(currentSession.user);
-        setUser(mappedUser);
-      }
-      
+      setUser(currentSession?.user ? {
+        id: currentSession.user.id,
+        email: currentSession.user.email,
+        // Map other user properties as needed
+      } as User : null);
       setLoading(false);
-    };
-
-    checkSession();
+    });
 
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
+  const loginWithEmail = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
-
-      const mappedUser = await mapSupabaseUser(data.user);
-      setUser(mappedUser);
-      setSession(data.session);
+      if (error) {
+        throw error;
+      }
       
-      // Redirect to home page after successful login
       navigate('/home');
     } catch (error: any) {
-      console.error('Login error:', error);
       toast({
-        title: 'Login Failed',
-        description: error.message || 'Failed to login. Please try again.',
-        variant: 'destructive',
+        title: "Login Failed",
+        description: error.message || "Could not sign in. Please try again.",
+        variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Add alias for login for compatibility with UI
-  const loginWithEmail = login;
+  const login = loginWithEmail; // Alias for loginWithEmail
 
   const loginWithGoogle = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
       });
-      if (error) throw error;
+
+      if (error) {
+        throw error;
+      }
     } catch (error: any) {
-      console.error('Google login error:', error);
       toast({
-        title: 'Login Failed',
-        description: error.message || 'Failed to login with Google. Please try again.',
-        variant: 'destructive',
+        title: "Google Login Failed",
+        description: error.message || "Could not sign in with Google. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -157,13 +128,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
       });
-      if (error) throw error;
+
+      if (error) {
+        throw error;
+      }
     } catch (error: any) {
-      console.error('Microsoft login error:', error);
       toast({
-        title: 'Login Failed',
-        description: error.message || 'Failed to login with Microsoft. Please try again.',
-        variant: 'destructive',
+        title: "Microsoft Login Failed",
+        description: error.message || "Could not sign in with Microsoft. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -173,21 +146,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
       });
-      if (error) throw error;
+
+      if (error) {
+        throw error;
+      }
     } catch (error: any) {
-      console.error('Apple login error:', error);
       toast({
-        title: 'Login Failed',
-        description: error.message || 'Failed to login with Apple. Please try again.',
-        variant: 'destructive',
+        title: "Apple Login Failed",
+        description: error.message || "Could not sign in with Apple. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Account Created",
+        description: "Please check your email to confirm your account.",
+      });
+      
+    } catch (error: any) {
+      toast({
+        title: "Sign Up Failed",
+        description: error.message || "Could not create account. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
   const signUp = async (email: string, password: string, displayName: string) => {
-    setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -197,94 +196,85 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       });
 
-      if (error) throw error;
-
-      if (data.user) {
-        toast({
-          title: 'Sign Up Successful',
-          description: 'Your account has been created. You can now log in.',
-        });
-        
-        // Auto login after signup
-        await login(email, password);
+      if (error) {
+        throw error;
       }
-    } catch (error: any) {
-      console.error('Sign up error:', error);
-      toast({
-        title: 'Sign Up Failed',
-        description: error.message || 'Failed to create account. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Add alias for signUp for compatibility with UI
-  const signUpWithEmail = async (email: string, password: string) => {
-    // For now, use email as display name if not provided
-    await signUp(email, password, email.split('@')[0]);
+      toast({
+        title: "Account Created",
+        description: "Please check your email to confirm your account.",
+      });
+      
+    } catch (error: any) {
+      toast({
+        title: "Sign Up Failed",
+        description: error.message || "Could not create account. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
       
-      setUser(null);
-      setSession(null);
+      if (error) {
+        throw error;
+      }
       
-      // Navigate to login page
-      navigate('/login');
+      // Navigation to login is handled by the onAuthStateChange listener
     } catch (error: any) {
-      console.error('Logout error:', error);
       toast({
-        title: 'Logout Failed',
-        description: error.message || 'Failed to logout. Please try again.',
-        variant: 'destructive',
+        title: "Logout Failed",
+        description: error.message || "Could not sign out. Please try again.",
+        variant: "destructive",
       });
-      throw error;
     }
   };
 
   const updateUserProfile = async (updates: Partial<User>) => {
-    if (!user?.id) return;
+    if (!user) {
+      toast({
+        title: "Update Failed",
+        description: "You must be logged in to update your profile.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      // Convert our app's User updates to profile table format
-      const profileUpdates: any = {};
-      
-      if (updates.displayName) profileUpdates.display_name = updates.displayName;
-      if (updates.bio !== undefined) profileUpdates.bio = updates.bio;
-      if (updates.university !== undefined) profileUpdates.university = updates.university;
-      if (updates.profilePictureUrl !== undefined) profileUpdates.profile_picture_url = updates.profilePictureUrl;
-      
       const { error } = await supabase
         .from('profiles')
-        .update(profileUpdates)
+        .update({
+          display_name: updates.displayName,
+          bio: updates.bio,
+          university: updates.university,
+          // Add other fields as needed
+        })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      // Update local user state
-      setUser(prev => prev ? { ...prev, ...updates } : null);
-      
+      // Update local state
+      setUser({ ...user, ...updates });
+
       toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been successfully updated.',
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
       });
     } catch (error: any) {
-      console.error('Update profile error:', error);
       toast({
-        title: 'Update Failed',
-        description: error.message || 'Failed to update profile. Please try again.',
-        variant: 'destructive',
+        title: "Update Failed",
+        description: error.message || "Could not update profile. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
   const setDisplayName = async (displayName: string) => {
-    await updateUserProfile({ displayName });
+    return updateUserProfile({ displayName });
   };
 
   return (
@@ -293,7 +283,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         session,
         loading,
-        isLoading: loading, // Alias for backward compatibility
+        isLoading: loading,
         login,
         loginWithEmail,
         loginWithGoogle,
@@ -309,12 +299,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

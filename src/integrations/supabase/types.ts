@@ -217,34 +217,24 @@ export type Database = {
       }
       hidden_posts: {
         Row: {
-          community_post_id: string | null
           created_at: string
           id: string
           post_id: string | null
           user_id: string
         }
         Insert: {
-          community_post_id?: string | null
           created_at?: string
           id?: string
           post_id?: string | null
           user_id: string
         }
         Update: {
-          community_post_id?: string | null
           created_at?: string
           id?: string
           post_id?: string | null
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "hidden_posts_community_post_id_fkey"
-            columns: ["community_post_id"]
-            isOneToOne: false
-            referencedRelation: "community_posts"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "hidden_posts_post_id_fkey"
             columns: ["post_id"]
@@ -315,7 +305,6 @@ export type Database = {
       }
       post_reactions: {
         Row: {
-          community_post_id: string | null
           created_at: string
           id: string
           post_id: string | null
@@ -323,7 +312,6 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          community_post_id?: string | null
           created_at?: string
           id?: string
           post_id?: string | null
@@ -331,7 +319,6 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          community_post_id?: string | null
           created_at?: string
           id?: string
           post_id?: string | null
@@ -339,13 +326,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "post_reactions_community_post_id_fkey"
-            columns: ["community_post_id"]
-            isOneToOne: false
-            referencedRelation: "community_posts"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "post_reactions_post_id_fkey"
             columns: ["post_id"]
@@ -457,7 +437,6 @@ export type Database = {
       reaction_counts: {
         Row: {
           angry_count: number | null
-          community_post_id: string | null
           heart_count: number | null
           id: string
           laugh_count: number | null
@@ -469,7 +448,6 @@ export type Database = {
         }
         Insert: {
           angry_count?: number | null
-          community_post_id?: string | null
           heart_count?: number | null
           id?: string
           laugh_count?: number | null
@@ -481,7 +459,6 @@ export type Database = {
         }
         Update: {
           angry_count?: number | null
-          community_post_id?: string | null
           heart_count?: number | null
           id?: string
           laugh_count?: number | null
@@ -493,13 +470,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "reaction_counts_community_post_id_fkey"
-            columns: ["community_post_id"]
-            isOneToOne: true
-            referencedRelation: "community_posts"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "reaction_counts_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: true
@@ -510,7 +480,6 @@ export type Database = {
       }
       reported_posts: {
         Row: {
-          community_post_id: string | null
           created_at: string
           id: string
           post_id: string | null
@@ -520,7 +489,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          community_post_id?: string | null
           created_at?: string
           id?: string
           post_id?: string | null
@@ -530,7 +498,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          community_post_id?: string | null
           created_at?: string
           id?: string
           post_id?: string | null
@@ -540,13 +507,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "reported_posts_community_post_id_fkey"
-            columns: ["community_post_id"]
-            isOneToOne: false
-            referencedRelation: "community_posts"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "reported_posts_post_id_fkey"
             columns: ["post_id"]
@@ -565,34 +525,24 @@ export type Database = {
       }
       saved_posts: {
         Row: {
-          community_post_id: string | null
           created_at: string
           id: string
           post_id: string | null
           user_id: string
         }
         Insert: {
-          community_post_id?: string | null
           created_at?: string
           id?: string
           post_id?: string | null
           user_id: string
         }
         Update: {
-          community_post_id?: string | null
           created_at?: string
           id?: string
           post_id?: string | null
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "saved_posts_community_post_id_fkey"
-            columns: ["community_post_id"]
-            isOneToOne: false
-            referencedRelation: "community_posts"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "saved_posts_post_id_fkey"
             columns: ["post_id"]
@@ -614,7 +564,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment: {
+        Args: {
+          row_id: string
+          inc: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

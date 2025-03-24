@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define the schemas for each step
 const step1Schema = z.object({
@@ -43,6 +44,7 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
   const location = useLocation();
   const [step, setStep] = useState(1);
   const [postType, setPostType] = useState<'forum' | 'confession' | 'campus' | 'nationwide'>('forum');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Determine post type based on current route
   useEffect(() => {
@@ -131,37 +133,146 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
     setStep(2);
   };
 
-  const handleStep2Submit = (data: any) => {
-    // Combine data from step 1 and step 2
-    const step1Data = step1Form.getValues();
-    const postData = {
-      ...step1Data,
-      ...data,
-      authorId: user?.id,
-      authorName: user?.displayName,
-      createdAt: new Date().toISOString(),
-      postType
-    };
+  const handleStep2Submit = async (data: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to create a post.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    // This is where we'd normally save to a database
-    onPost(postData);
-    
-    // Show success message
-    toast({
-      title: "Post created successfully",
-      description: isForumOrConfession 
-        ? "Your post and chatroom have been created."
-        : "Your post has been published.",
-    });
-    
-    // Close the modal
-    onClose();
-    
-    // Reset forms and step
-    step1Form.reset();
-    step2ForumForm.reset();
-    step2CommunityForm.reset();
-    setStep(1);
+    try {
+      // Combine data from step 1 and step 2
+      const step1Data = step1Form.getValues();
+      
+      // Prepare the post data based on post type
+      let postData = {
+        title: step1Data.title,
+        content: step1Data.content,
+        author_id: user.id,
+        topic: data.topic,
+        // Include any other relevant fields
+      };
+
+      let result;
+      
+      // Insert into the appropriate table based on post type
+      if (postType === 'forum') {
+        result = await supabase
+          .from('posts_forum')
+          .insert({
+            ...postData,
+            title: step1Data.title,
+            content: step1Data.content,
+            author_id: user.id,
+            topic: data.topic,
+          });
+      } else if (postType === 'confession') {
+        result = await supabase
+          .from('posts_confession')
+          .insert({
+            ...postData,
+            title: step1Data.title,
+            content: step1Data.content,
+            author_id: user.id,
+            topic: data.topic,
+          });
+      } else if (postType === 'campus') {
+        result = await supabase
+          .from('posts_campus_community')
+          .insert({
+            ...postData,
+            title: step1Data.title,
+            content: step1Data.content,
+            author_id: user.id,
+            topic: data.topic,
+          });
+      } else if (postType === 'nationwide') {
+        result = await supabase
+          .from('posts_nationwide_community')
+          .insert({
+            ...postData,
+            title: step1Data.title,
+            content: step1Data.content,
+            author_id: user.id,
+            topic: data.topic,
+          });
+      }
+
+      if (result?.error) {
+        throw result.error;
+      }
+
+      // Create chatroom for forum and confession posts
+      if (isForumOrConfession && result?.data?.[0]?.id) {
+        const postId = result.data[0].id;
+        
+        // Create chatroom
+        const chatroomResult = await supabase
+          .from('chatrooms')
+          .insert({
+            name: data.chatroomName || step1Data.title,
+            owner_id: user.id,
+            post_id: postId,
+            is_private: false,
+          });
+        
+        if (chatroomResult.error) {
+          console.error("Error creating chatroom:", chatroomResult.error);
+        } else if (chatroomResult.data?.[0]?.id) {
+          // Add owner as member
+          await supabase
+            .from('chatroom_members')
+            .insert({
+              chatroom_id: chatroomResult.data[0].id,
+              user_id: user.id,
+            });
+            
+          // Create initial message with post content
+          await supabase
+            .from('messages')
+            .insert({
+              sender_id: user.id,
+              content: step1Data.content,
+              chatroom_id: chatroomResult.data[0].id,
+            });
+        }
+      }
+      
+      // Show success message
+      toast({
+        title: "Post created successfully",
+        description: isForumOrConfession 
+          ? "Your post and chatroom have been created."
+          : "Your post has been published.",
+      });
+      
+      // Call the onPost callback with the created data
+      onPost(postData);
+      
+      // Close the modal
+      onClose();
+      
+      // Reset forms and step
+      step1Form.reset();
+      step2ForumForm.reset();
+      step2CommunityForm.reset();
+      setStep(1);
+      
+    } catch (error: any) {
+      console.error("Error creating post:", error);
+      toast({
+        title: "Error Creating Post",
+        description: error.message || "There was an error creating your post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -291,11 +402,16 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
                     variant="outline" 
                     onClick={() => setStep(1)} 
                     className="sm:w-1/2"
+                    type="button"
                   >
                     Back
                   </Button>
-                  <Button type="submit" className="sm:w-1/2">
-                    Post
+                  <Button 
+                    type="submit" 
+                    className="sm:w-1/2"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Posting..." : "Post"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -357,11 +473,16 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
                     variant="outline" 
                     onClick={() => setStep(1)} 
                     className="sm:w-1/2"
+                    type="button"
                   >
                     Back
                   </Button>
-                  <Button type="submit" className="sm:w-1/2">
-                    Post
+                  <Button 
+                    type="submit" 
+                    className="sm:w-1/2"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Posting..." : "Post"}
                   </Button>
                 </DialogFooter>
               </form>

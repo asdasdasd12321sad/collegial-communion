@@ -1,4 +1,5 @@
 
+// User types
 declare type UserVerificationStatus = 'verified' | 'unverified';
 declare type BlockStatus = 'active' | 'blocked' | 'deleted';
 declare type AuthProvider = 'email' | 'google' | 'microsoft' | 'apple';
