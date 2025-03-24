@@ -1,5 +1,7 @@
 
 declare type UserVerificationStatus = 'verified' | 'unverified';
+declare type BlockStatus = 'active' | 'blocked' | 'deleted';
+declare type AuthProvider = 'email' | 'google' | 'microsoft' | 'apple';
 
 interface User {
   id: string;
@@ -12,6 +14,9 @@ interface User {
   joinedAt?: string;
   interests?: string[];
   photos?: string[];
+  authProvider?: AuthProvider;
+  blockStatus?: BlockStatus;
+  lastLogin?: string;
 }
 
 interface Post {

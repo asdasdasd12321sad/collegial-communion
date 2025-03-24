@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import BottomNavigation from '@/components/layout/BottomNavigation';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { 
   User, 
@@ -17,9 +17,12 @@ import {
   Shield, 
   ChevronRight,
   Mail,
-  School
+  School,
+  Calendar,
+  Image
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +34,26 @@ const Settings: React.FC = () => {
       title: "Logged out",
       description: "You have been successfully logged out.",
     });
+  };
+  
+  const formatJoinDate = (dateString?: string) => {
+    if (!dateString) return 'Recently';
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+  };
+  
+  // Get auth provider display name
+  const getAuthProviderName = (provider?: string) => {
+    switch (provider) {
+      case 'google':
+        return 'Google';
+      case 'microsoft':
+        return 'Microsoft';
+      case 'apple':
+        return 'Apple';
+      case 'email':
+      default:
+        return 'Email';
+    }
   };
   
   // Section components for better organization
@@ -66,9 +89,13 @@ const Settings: React.FC = () => {
         
         <div className="flex items-center mb-4">
           <Avatar className="h-14 w-14 bg-cendy-blue text-white">
-            <AvatarFallback>
-              {user?.displayName?.[0] || 'U'}
-            </AvatarFallback>
+            {user?.profilePicture ? (
+              <AvatarImage src={user.profilePicture} alt={user?.displayName || 'Profile'} />
+            ) : (
+              <AvatarFallback>
+                {user?.displayName?.[0] || 'U'}
+              </AvatarFallback>
+            )}
           </Avatar>
           
           <div className="ml-3">
@@ -83,7 +110,21 @@ const Settings: React.FC = () => {
                 {user.university}
               </div>
             )}
+            <div className="text-sm text-cendy-text-secondary flex items-center mt-0.5">
+              <Calendar size={14} className="mr-1" />
+              Joined {formatJoinDate(user?.joinedAt)}
+            </div>
           </div>
+        </div>
+        
+        {user?.authProvider && (
+          <div className="text-xs bg-cendy-gray-medium/20 rounded-full px-3 py-1 inline-block text-cendy-text-secondary mb-2">
+            Sign in with {getAuthProviderName(user.authProvider)}
+          </div>
+        )}
+        
+        <div className="text-xs bg-cendy-gray-medium/20 rounded-full px-3 py-1 inline-block text-cendy-text-secondary ml-2 mb-2">
+          {user?.verificationStatus === 'verified' ? '✓ Verified' : '⚠ Unverified'}
         </div>
       </div>
       
@@ -92,6 +133,17 @@ const Settings: React.FC = () => {
           icon={User} 
           label="Edit Profile" 
           onClick={() => navigate('/profile')} 
+        />
+        
+        <SettingItem 
+          icon={Image} 
+          label="Manage Photos" 
+          onClick={() => {
+            toast({
+              title: "Coming Soon",
+              description: "Photo management will be available soon.",
+            });
+          }} 
         />
         
         <SettingItem 

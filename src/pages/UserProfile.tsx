@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, MessageCircle, Calendar, School, User, ImageIcon, BookmarkIcon, Heart } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Calendar, School, ImageIcon, Heart } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from '@/hooks/use-toast';
 import Header from '@/components/layout/Header';
+import { formatDistanceToNow } from 'date-fns';
 
 // Sample user data - in a real app, this would come from an API
 const SAMPLE_USERS = [
@@ -21,7 +22,9 @@ const SAMPLE_USERS = [
       "https://images.unsplash.com/photo-1472213984618-c79aaec300c1",
       "https://images.unsplash.com/photo-1540575467063-178a50c2df87"
     ],
-    interests: ['Coding', 'Coffee', 'Gaming', 'Hiking']
+    interests: ['Coding', 'Coffee', 'Gaming', 'Hiking'],
+    verificationStatus: 'verified',
+    authProvider: 'google'
   },
   {
     id: '2',
@@ -32,7 +35,9 @@ const SAMPLE_USERS = [
     photos: [
       "https://images.unsplash.com/photo-1501854140801-50d01698950b"
     ],
-    interests: ['Biology', 'Photography', 'Hiking', 'Reading']
+    interests: ['Biology', 'Photography', 'Hiking', 'Reading'],
+    verificationStatus: 'verified',
+    authProvider: 'microsoft'
   },
   {
     id: '3',
@@ -44,7 +49,9 @@ const SAMPLE_USERS = [
       "https://images.unsplash.com/photo-1540575467063-178a50c2df87",
       "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2"
     ],
-    interests: ['AI', 'Machine Learning', 'Robotics', 'Reading']
+    interests: ['AI', 'Machine Learning', 'Robotics', 'Reading'],
+    verificationStatus: 'unverified',
+    authProvider: 'email'
   }
 ];
 
@@ -53,7 +60,7 @@ const UserProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.verificationStatus === 'verified';
-  const [activeTab, setActiveTab] = useState("photos");
+  const [activeTab, setActiveTab] = useState<ProfileTab>("photos");
   
   // Find user by ID
   const profileUser = SAMPLE_USERS.find(u => u.id === userId) || SAMPLE_USERS[0];
@@ -84,7 +91,18 @@ const UserProfile: React.FC = () => {
   // Format the join date
   const formatJoinDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return formatDistanceToNow(date, { addSuffix: true });
+  };
+  
+  // Get verification badge
+  const getVerificationBadge = (status?: string) => {
+    return status === 'verified' ? (
+      <span className="inline-flex items-center ml-1 text-cendy-blue">
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+        </svg>
+      </span>
+    ) : null;
   };
   
   // Empty states
@@ -129,13 +147,20 @@ const UserProfile: React.FC = () => {
         <div className="bg-white px-4 pt-6 pb-6">
           <div className="flex items-start">
             <Avatar className="h-20 w-20 bg-cendy-blue text-white text-xl">
-              <AvatarFallback>
-                {profileUser.displayName[0]}
-              </AvatarFallback>
+              {profileUser.profilePicture ? (
+                <AvatarImage src={profileUser.profilePicture} alt={profileUser.displayName} />
+              ) : (
+                <AvatarFallback>
+                  {profileUser.displayName[0]}
+                </AvatarFallback>
+              )}
             </Avatar>
             
             <div className="ml-4 flex-1">
-              <h1 className="text-xl font-bold text-cendy-text">{profileUser.displayName}</h1>
+              <h1 className="text-xl font-bold text-cendy-text flex items-center">
+                {profileUser.displayName}
+                {getVerificationBadge(profileUser.verificationStatus)}
+              </h1>
               
               <div className="flex items-center mt-1">
                 <School size={16} className="text-cendy-text-secondary mr-1" />
@@ -169,7 +194,7 @@ const UserProfile: React.FC = () => {
         
         {/* Tabs Section */}
         <div className="bg-white">
-          <Tabs defaultValue="photos" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs defaultValue="photos" value={activeTab} onValueChange={setActiveTab as (value: string) => void} className="w-full">
             <TabsList className="w-full grid grid-cols-3 bg-cendy-gray-medium/20">
               <TabsTrigger value="photos" className="data-[state=active]:bg-white">
                 Photos
@@ -240,6 +265,14 @@ const UserProfile: React.FC = () => {
                     <p className="text-base text-cendy-text">{profileUser.bio}</p>
                   </div>
                 )}
+                
+                <div>
+                  <h3 className="text-sm font-medium text-cendy-text-secondary mb-1">Account Status</h3>
+                  <p className="text-base text-cendy-text flex items-center">
+                    {profileUser.verificationStatus === 'verified' ? 'Verified' : 'Unverified'} 
+                    {getVerificationBadge(profileUser.verificationStatus)}
+                  </p>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

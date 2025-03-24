@@ -143,6 +143,7 @@ export type Database = {
           created_at: string
           id: string
           title: string
+          topic: string | null
           updated_at: string
         }
         Insert: {
@@ -152,6 +153,7 @@ export type Database = {
           created_at?: string
           id?: string
           title: string
+          topic?: string | null
           updated_at?: string
         }
         Update: {
@@ -161,6 +163,7 @@ export type Database = {
           created_at?: string
           id?: string
           title?: string
+          topic?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -369,6 +372,7 @@ export type Database = {
           id: string
           post_type: string
           title: string
+          topic: string | null
           updated_at: string
         }
         Insert: {
@@ -380,6 +384,7 @@ export type Database = {
           id?: string
           post_type: string
           title: string
+          topic?: string | null
           updated_at?: string
         }
         Update: {
@@ -391,6 +396,7 @@ export type Database = {
           id?: string
           post_type?: string
           title?: string
+          topic?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -405,36 +411,105 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auth_provider: string | null
           bio: string | null
+          block_status: boolean | null
           created_at: string
           display_name: string
           id: string
+          is_deleted: boolean | null
+          last_login: string | null
+          login_email: string | null
           profile_picture_url: string | null
           university: string | null
           updated_at: string
           verification_status: string | null
         }
         Insert: {
+          auth_provider?: string | null
           bio?: string | null
+          block_status?: boolean | null
           created_at?: string
           display_name: string
           id: string
+          is_deleted?: boolean | null
+          last_login?: string | null
+          login_email?: string | null
           profile_picture_url?: string | null
           university?: string | null
           updated_at?: string
           verification_status?: string | null
         }
         Update: {
+          auth_provider?: string | null
           bio?: string | null
+          block_status?: boolean | null
           created_at?: string
           display_name?: string
           id?: string
+          is_deleted?: boolean | null
+          last_login?: string | null
+          login_email?: string | null
           profile_picture_url?: string | null
           university?: string | null
           updated_at?: string
           verification_status?: string | null
         }
         Relationships: []
+      }
+      reaction_counts: {
+        Row: {
+          angry_count: number | null
+          community_post_id: string | null
+          heart_count: number | null
+          id: string
+          laugh_count: number | null
+          like_count: number | null
+          post_id: string | null
+          sad_count: number | null
+          updated_at: string | null
+          wow_count: number | null
+        }
+        Insert: {
+          angry_count?: number | null
+          community_post_id?: string | null
+          heart_count?: number | null
+          id?: string
+          laugh_count?: number | null
+          like_count?: number | null
+          post_id?: string | null
+          sad_count?: number | null
+          updated_at?: string | null
+          wow_count?: number | null
+        }
+        Update: {
+          angry_count?: number | null
+          community_post_id?: string | null
+          heart_count?: number | null
+          id?: string
+          laugh_count?: number | null
+          like_count?: number | null
+          post_id?: string | null
+          sad_count?: number | null
+          updated_at?: string | null
+          wow_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reaction_counts_community_post_id_fkey"
+            columns: ["community_post_id"]
+            isOneToOne: true
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reaction_counts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reported_posts: {
         Row: {
