@@ -58,8 +58,8 @@ const MessagesHome: React.FC = () => {
               owner_id,
               created_at,
               updated_at,
-              owner:owner_id(display_name),
-              messages(id, content, sender_id, created_at, is_read, sender:sender_id(display_name))
+              owner:profiles!owner_id(display_name),
+              messages(id, content, sender_id, created_at, is_read, sender:profiles!sender_id(display_name))
             `)
             .in('id', chatroomIds)
             .order('updated_at', { ascending: false });
@@ -100,8 +100,8 @@ const MessagesHome: React.FC = () => {
             user2_id,
             created_at,
             updated_at,
-            user1:user1_id(id, display_name),
-            user2:user2_id(id, display_name),
+            user1:profiles!user1_id(id, display_name),
+            user2:profiles!user2_id(id, display_name),
             messages(id, content, sender_id, created_at, is_read)
           `)
           .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
@@ -142,7 +142,7 @@ const MessagesHome: React.FC = () => {
             sender_id,
             created_at,
             status,
-            sender:sender_id(display_name)
+            sender:profiles!sender_id(display_name)
           `)
           .eq('receiver_id', user.id)
           .eq('status', 'pending');
