@@ -18,12 +18,6 @@ interface User {
   authProvider?: AuthProvider;
   blockStatus?: BlockStatus;
   lastLogin?: string;
-  notificationSettings?: {
-    newMessages: boolean;
-    postReactions: boolean;
-    mentions: boolean;
-    newPosts: boolean;
-  };
 }
 
 // Post interface types

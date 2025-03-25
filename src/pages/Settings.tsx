@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { 
   User, 
   Bell, 
@@ -18,18 +19,14 @@ import {
   Mail,
   School,
   Calendar,
+  Image
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
-import EditProfileForm from '@/components/settings/EditProfileForm';
-import NotificationsSettings from '@/components/settings/NotificationsSettings';
-
-type SettingsView = 'main' | 'editProfile' | 'notifications' | 'privacy';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<SettingsView>('main');
   
   const handleLogout = async () => {
     try {
@@ -96,22 +93,6 @@ const Settings: React.FC = () => {
     </button>
   );
   
-  const MainView = () => (
-    <>
-      <AccountSection />
-      <SupportSection />
-      
-      <div className="mt-6 mb-24">
-        <button
-          className="w-full rounded-lg border border-red-200 bg-white py-3 text-center text-red-500 font-medium shadow-sm"
-          onClick={handleLogout}
-        >
-          Log Out
-        </button>
-      </div>
-    </>
-  );
-  
   const AccountSection = () => (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="p-4">
@@ -162,13 +143,29 @@ const Settings: React.FC = () => {
         <SettingItem 
           icon={User} 
           label="Edit Profile" 
-          onClick={() => setCurrentView('editProfile')} 
+          onClick={() => navigate('/profile')} 
+        />
+        
+        <SettingItem 
+          icon={Image} 
+          label="Manage Photos" 
+          onClick={() => {
+            toast({
+              title: "Coming Soon",
+              description: "Photo management will be available soon.",
+            });
+          }} 
         />
         
         <SettingItem 
           icon={Bell} 
           label="Notifications" 
-          onClick={() => setCurrentView('notifications')} 
+          onClick={() => {
+            toast({
+              title: "Coming Soon",
+              description: "Notification settings will be available soon.",
+            });
+          }} 
         />
         
         <SettingItem 
@@ -239,57 +236,22 @@ const Settings: React.FC = () => {
     </div>
   );
   
-  const renderView = () => {
-    switch (currentView) {
-      case 'editProfile':
-        return (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-24">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-cendy-text">Edit Profile</h2>
-              <button 
-                onClick={() => setCurrentView('main')}
-                className="text-sm text-cendy-blue"
-              >
-                Back
-              </button>
-            </div>
-            <EditProfileForm />
-          </div>
-        );
-      case 'notifications':
-        return (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-24">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-cendy-text">Notifications</h2>
-              <button 
-                onClick={() => setCurrentView('main')}
-                className="text-sm text-cendy-blue"
-              >
-                Back
-              </button>
-            </div>
-            <NotificationsSettings />
-          </div>
-        );
-      default:
-        return <MainView />;
-    }
-  };
-  
   return (
     <div className="flex min-h-screen flex-col bg-cendy-gray">
-      <Header title={
-        currentView === 'main' 
-          ? 'Settings' 
-          : currentView === 'editProfile' 
-            ? 'Edit Profile' 
-            : currentView === 'notifications'
-              ? 'Notifications'
-              : 'Settings'
-      } centerTitle />
+      <Header title="Settings" centerTitle />
       
       <main className="flex-1 p-4 max-w-lg mx-auto w-full">
-        {renderView()}
+        <AccountSection />
+        <SupportSection />
+        
+        <div className="mt-6 mb-24">
+          <button
+            className="w-full rounded-lg border border-red-200 bg-white py-3 text-center text-red-500 font-medium shadow-sm"
+            onClick={handleLogout}
+          >
+            Log Out
+          </button>
+        </div>
       </main>
       
       <BottomNavigation />
