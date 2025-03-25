@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { 
   User, 
   Bell, 
@@ -18,6 +19,7 @@ import {
   Mail,
   School,
   Calendar,
+  Image
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
@@ -141,13 +143,29 @@ const Settings: React.FC = () => {
         <SettingItem 
           icon={User} 
           label="Edit Profile" 
-          onClick={() => navigate('/edit-profile')} 
+          onClick={() => navigate('/profile')} 
+        />
+        
+        <SettingItem 
+          icon={Image} 
+          label="Manage Photos" 
+          onClick={() => {
+            toast({
+              title: "Coming Soon",
+              description: "Photo management will be available soon.",
+            });
+          }} 
         />
         
         <SettingItem 
           icon={Bell} 
           label="Notifications" 
-          onClick={() => navigate('/notifications')} 
+          onClick={() => {
+            toast({
+              title: "Coming Soon",
+              description: "Notification settings will be available soon.",
+            });
+          }} 
         />
         
         <SettingItem 

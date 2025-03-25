@@ -393,9 +393,7 @@ export type Database = {
           block_status: boolean | null
           created_at: string
           display_name: string
-          full_name: string | null
           id: string
-          images: Json | null
           is_deleted: boolean | null
           last_login: string | null
           login_email: string | null
@@ -410,9 +408,7 @@ export type Database = {
           block_status?: boolean | null
           created_at?: string
           display_name: string
-          full_name?: string | null
           id: string
-          images?: Json | null
           is_deleted?: boolean | null
           last_login?: string | null
           login_email?: string | null
@@ -427,9 +423,7 @@ export type Database = {
           block_status?: boolean | null
           created_at?: string
           display_name?: string
-          full_name?: string | null
           id?: string
-          images?: Json | null
           is_deleted?: boolean | null
           last_login?: string | null
           login_email?: string | null

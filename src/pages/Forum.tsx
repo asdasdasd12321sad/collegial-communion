@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, PlusCircle, ArrowLeft, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,7 +40,7 @@ const Forum: React.FC = () => {
       
       try {
         let query = supabase
-          .from('posts')
+          .from('posts_forum')
           .select(`
             id,
             title,
@@ -51,8 +50,7 @@ const Forum: React.FC = () => {
             created_at,
             profiles(display_name, university)
           `)
-          .eq('post_type', 'forum')
-          .order(sortOption === 'new' ? 'created_at' : 'updated_at', { ascending: false });
+          .order(sortOption === 'new' ? 'created_at' : 'like_count', { ascending: false });
         
         if (topicFilter !== 'all') {
           query = query.eq('topic', topicFilter);
@@ -70,8 +68,8 @@ const Forum: React.FC = () => {
             title: post.title,
             content: post.content,
             authorId: post.author_id,
-            authorName: post.profiles?.[0]?.display_name || 'Anonymous',
-            authorSchool: post.profiles?.[0]?.university || 'Unknown University',
+            authorName: post.profiles?.display_name || 'Anonymous',
+            authorSchool: post.profiles?.university || 'Unknown University',
             createdAt: post.created_at,
             commentCount: 0,
             topic: post.topic,
@@ -106,8 +104,7 @@ const Forum: React.FC = () => {
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'posts',
-        filter: `post_type=eq.forum`
+        table: 'posts_forum'
       }, (payload) => {
         const fetchAuthorAndUpdatePosts = async () => {
           const post = payload.new as any;
@@ -236,10 +233,9 @@ const Forum: React.FC = () => {
   
   const handleOpenComments = (postId: string) => {
     toast({
-      title: "Opening Comments",
-      description: "Redirecting to comment section...",
+      title: "Open Comments",
+      description: `Opening comments for post ${postId}`,
     });
-    // You can add navigation to a detailed comment page here
   };
   
   const handleSearchClick = () => {
@@ -251,8 +247,6 @@ const Forum: React.FC = () => {
   };
   
   const handlePostCreated = (newPost: any) => {
-    console.log("New post created:", newPost);
-    
     setTimeout(() => {
       setPosts(prevPosts => {
         const exists = prevPosts.some(post => post.id === newPost.id);
@@ -394,14 +388,6 @@ const Forum: React.FC = () => {
             {posts.length === 0 && (
               <div className="mt-8 text-center">
                 <p className="text-cendy-text-secondary">No forum posts found that match the selected topic.</p>
-                {isVerified && (
-                  <button
-                    onClick={handleCreatePost}
-                    className="mt-4 inline-flex items-center justify-center rounded-md bg-cendy-blue px-4 py-2 text-sm font-medium text-white hover:bg-cendy-blue/90"
-                  >
-                    Create a post
-                  </button>
-                )}
               </div>
             )}
           </>

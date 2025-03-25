@@ -8,7 +8,6 @@ interface User {
   id: string;
   email?: string;
   displayName?: string;
-  fullName?: string;
   verificationStatus?: UserVerificationStatus;
   university?: string | null;
   bio?: string;
@@ -16,7 +15,6 @@ interface User {
   createdAt?: string;
   interests?: string[];
   photos?: string[];
-  images?: string[];
   authProvider?: AuthProvider;
   blockStatus?: BlockStatus;
   lastLogin?: string;
@@ -93,6 +91,4 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (updates: Partial<User>) => Promise<void>;
   setDisplayName: (displayName: string) => Promise<void>;
-  uploadProfileImage: (file: File) => Promise<string>;
-  deleteProfileImage: (url: string) => Promise<void>;
 }

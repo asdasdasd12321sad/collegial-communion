@@ -20,8 +20,6 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (updates: Partial<User>) => Promise<void>;
   setDisplayName: (displayName: string) => Promise<void>;
-  uploadProfileImage: (file: File) => Promise<string>;
-  deleteProfileImage: (url: string) => Promise<void>;
 }
 
 // Create context with a default empty implementation
@@ -40,8 +38,6 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   updateUserProfile: async () => {},
   setDisplayName: async () => {},
-  uploadProfileImage: async () => "",
-  deleteProfileImage: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -52,70 +48,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Fetch user profile from profiles table
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
-      }
-
-      if (data) {
-        return {
-          id: data.id,
-          email: data.login_email,
-          displayName: data.display_name,
-          fullName: data.full_name,
-          verificationStatus: data.verification_status as UserVerificationStatus,
-          university: data.university,
-          bio: data.bio,
-          profilePictureUrl: data.profile_picture_url,
-          createdAt: data.created_at,
-          authProvider: data.auth_provider as AuthProvider,
-          lastLogin: data.last_login,
-          images: data.images || []
-        } as User;
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-      return null;
-    }
-  };
-
   useEffect(() => {
     // First set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log("Auth state changed:", event);
+      (event, newSession) => {
         setSession(newSession);
-        
-        if (newSession?.user) {
-          const profile = await fetchUserProfile(newSession.user.id);
-          setUser(profile || {
-            id: newSession.user.id,
-            email: newSession.user.email,
-          } as User);
-          
-          // Check if user needs to set display name
-          if (event === 'SIGNED_IN' && profile) {
-            if (!profile.displayName) {
-              navigate('/set-display-name');
-            } else {
-              // If user already has a display name, redirect to home
-              navigate('/home');
-            }
-          }
-        } else {
-          setUser(null);
-        }
+        setUser(newSession?.user ? {
+          id: newSession.user.id,
+          email: newSession.user.email,
+          // Map other user properties as needed
+        } as User : null);
 
         // Auto-redirect to login on signOut
         if (event === 'SIGNED_OUT') {
@@ -125,26 +67,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
-      
-      if (currentSession?.user) {
-        const profile = await fetchUserProfile(currentSession.user.id);
-        setUser(profile || {
-          id: currentSession.user.id,
-          email: currentSession.user.email,
-        } as User);
-        
-        // Check if user needs to set display name
-        if (profile) {
-          if (!profile.displayName) {
-            navigate('/set-display-name');
-          }
-        }
-      } else {
-        setUser(null);
-      }
-      
+      setUser(currentSession?.user ? {
+        id: currentSession.user.id,
+        email: currentSession.user.email,
+        // Map other user properties as needed
+      } as User : null);
       setLoading(false);
     });
 
@@ -180,12 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
       });
 
       if (error) {
@@ -204,9 +127,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
-        options: {
-          scopes: 'email profile openid',
-        },
       });
 
       if (error) {
@@ -323,17 +243,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const updateData: any = {};
-      
-      if (updates.displayName !== undefined) updateData.display_name = updates.displayName;
-      if (updates.bio !== undefined) updateData.bio = updates.bio;
-      if (updates.university !== undefined) updateData.university = updates.university;
-      if (updates.profilePictureUrl !== undefined) updateData.profile_picture_url = updates.profilePictureUrl;
-      if (updates.images !== undefined) updateData.images = updates.images;
-      
       const { error } = await supabase
         .from('profiles')
-        .update(updateData)
+        .update({
+          display_name: updates.displayName,
+          bio: updates.bio,
+          university: updates.university,
+          // Add other fields as needed
+        })
         .eq('id', user.id);
 
       if (error) {
@@ -357,124 +274,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setDisplayName = async (displayName: string) => {
-    console.log("Setting display name:", displayName);
     return updateUserProfile({ displayName });
-  };
-
-  const uploadProfileImage = async (file: File): Promise<string> => {
-    if (!user) {
-      toast({
-        title: "Upload Failed",
-        description: "You must be logged in to upload images.",
-        variant: "destructive",
-      });
-      return "";
-    }
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError, data } = await supabase.storage
-        .from('profile_images')
-        .upload(filePath, file, {
-          upsert: true,
-        });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      // Get the public URL for the uploaded image
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile_images')
-        .getPublicUrl(filePath);
-
-      // Update user's profile with the new image URL
-      let currentImages = user.images || [];
-      if (Array.isArray(currentImages)) {
-        currentImages = [...currentImages, publicUrl];
-      } else {
-        currentImages = [publicUrl];
-      }
-
-      await updateUserProfile({ 
-        images: currentImages,
-        // Update profile picture if user doesn't have one yet
-        ...(user.profilePictureUrl ? {} : { profilePictureUrl: publicUrl })
-      });
-
-      toast({
-        title: "Image Uploaded",
-        description: "Your image has been successfully uploaded.",
-      });
-
-      return publicUrl;
-    } catch (error: any) {
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Could not upload image. Please try again.",
-        variant: "destructive",
-      });
-      return "";
-    }
-  };
-
-  const deleteProfileImage = async (url: string) => {
-    if (!user) {
-      toast({
-        title: "Delete Failed",
-        description: "You must be logged in to delete images.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Extract the file path from the URL
-      const baseUrl = supabase.storage.from('profile_images').getPublicUrl('').data.publicUrl;
-      const filePath = url.replace(baseUrl, '');
-
-      // Delete the file from storage
-      const { error: deleteError } = await supabase.storage
-        .from('profile_images')
-        .remove([filePath]);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      // Update user's images array by removing the deleted image
-      let currentImages = user.images || [];
-      if (Array.isArray(currentImages)) {
-        currentImages = currentImages.filter(img => img !== url);
-      }
-
-      // If the deleted image was the profile picture, update it
-      let profilePictureUpdate = {};
-      if (user.profilePictureUrl === url) {
-        profilePictureUpdate = { 
-          profilePictureUrl: currentImages.length > 0 ? currentImages[0] : null 
-        };
-      }
-
-      await updateUserProfile({ 
-        images: currentImages,
-        ...profilePictureUpdate
-      });
-
-      toast({
-        title: "Image Deleted",
-        description: "Your image has been successfully deleted.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Delete Failed",
-        description: error.message || "Could not delete image. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   return (
@@ -494,8 +294,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         updateUserProfile,
         setDisplayName,
-        uploadProfileImage,
-        deleteProfileImage,
       }}
     >
       {children}

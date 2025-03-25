@@ -149,22 +149,59 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
       // Combine data from step 1 and step 2
       const step1Data = step1Form.getValues();
       
-      // Prepare the post data
+      // Prepare the post data based on post type
       let postData = {
         title: step1Data.title,
         content: step1Data.content,
         author_id: user.id,
         topic: data.topic,
-        post_type: postType
+        // Include any other relevant fields
       };
 
       let result;
       
-      // Insert into the posts table, setting post_type appropriately
-      result = await supabase
-        .from('posts')
-        .insert(postData)
-        .select();
+      // Insert into the appropriate table based on post type
+      if (postType === 'forum') {
+        result = await supabase
+          .from('posts_forum')
+          .insert({
+            ...postData,
+            title: step1Data.title,
+            content: step1Data.content,
+            author_id: user.id,
+            topic: data.topic,
+          });
+      } else if (postType === 'confession') {
+        result = await supabase
+          .from('posts_confession')
+          .insert({
+            ...postData,
+            title: step1Data.title,
+            content: step1Data.content,
+            author_id: user.id,
+            topic: data.topic,
+          });
+      } else if (postType === 'campus') {
+        result = await supabase
+          .from('posts_campus_community')
+          .insert({
+            ...postData,
+            title: step1Data.title,
+            content: step1Data.content,
+            author_id: user.id,
+            topic: data.topic,
+          });
+      } else if (postType === 'nationwide') {
+        result = await supabase
+          .from('posts_nationwide_community')
+          .insert({
+            ...postData,
+            title: step1Data.title,
+            content: step1Data.content,
+            author_id: user.id,
+            topic: data.topic,
+          });
+      }
 
       if (result?.error) {
         throw result.error;
@@ -182,12 +219,11 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
             owner_id: user.id,
             post_id: postId,
             is_private: false,
-          })
-          .select();
+          });
         
         if (chatroomResult.error) {
           console.error("Error creating chatroom:", chatroomResult.error);
-        } else if (chatroomResult.data && chatroomResult.data[0]) {
+        } else if (chatroomResult.data?.[0]?.id) {
           // Add owner as member
           await supabase
             .from('chatroom_members')

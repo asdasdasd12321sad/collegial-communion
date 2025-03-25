@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, X, Check, User, UsersRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -33,6 +34,7 @@ const MessagesHome: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
   const [createChatType, setCreateChatType] = useState<'direct' | 'group'>('direct');
 
+  // Fetch chatrooms, direct chats, and requests on component mount
   useEffect(() => {
     if (!user) return;
 
@@ -58,8 +60,8 @@ const MessagesHome: React.FC = () => {
               owner_id,
               created_at,
               updated_at,
-              owner:profiles!owner_id(display_name),
-              messages(id, content, sender_id, created_at, is_read, sender:profiles!sender_id(display_name))
+              profiles:owner_id(display_name),
+              messages(id, content, sender_id, created_at, is_read, profiles:sender_id(display_name))
             `)
             .in('id', chatroomIds)
             .order('updated_at', { ascending: false });
@@ -76,14 +78,11 @@ const MessagesHome: React.FC = () => {
             // Count unread messages
             const unreadCount = messages.filter((m: any) => !m.is_read && m.sender_id !== user.id).length;
             
-            // Fix the access to owner's display_name
-            const ownerDisplayName = chatroom.owner?.display_name || 'Unknown';
-            
             return {
               id: chatroom.id,
               name: chatroom.name,
               lastMessage: lastMessage 
-                ? `${lastMessage.sender?.display_name || 'Unknown'}: ${lastMessage.content}` 
+                ? `${lastMessage.profiles?.display_name || 'Unknown'}: ${lastMessage.content}` 
                 : 'No messages yet',
               timestamp: lastMessage ? new Date(lastMessage.created_at).toISOString() : chatroom.created_at,
               unreadCount: unreadCount,
@@ -103,8 +102,8 @@ const MessagesHome: React.FC = () => {
             user2_id,
             created_at,
             updated_at,
-            user1:profiles!user1_id(id, display_name),
-            user2:profiles!user2_id(id, display_name),
+            user1:user1_id(id, display_name),
+            user2:user2_id(id, display_name),
             messages(id, content, sender_id, created_at, is_read)
           `)
           .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
@@ -113,10 +112,8 @@ const MessagesHome: React.FC = () => {
 
         // Process direct chat data
         const processedDirectChats = directChatsData?.map(chat => {
-          // Determine the other user (fix access to properties)
+          // Determine the other user
           const otherUser = chat.user1_id === user.id ? chat.user2 : chat.user1;
-          const otherUserId = otherUser?.id || 'unknown';
-          const otherUserName = otherUser?.display_name || 'Unknown User';
           
           const messages = chat.messages || [];
           const lastMessage = messages.length > 0 
@@ -128,8 +125,8 @@ const MessagesHome: React.FC = () => {
           
           return {
             id: chat.id,
-            otherUserId: otherUserId,
-            name: otherUserName,
+            otherUserId: otherUser.id,
+            name: otherUser.display_name || 'Unknown User',
             lastMessage: lastMessage ? lastMessage.content : 'No messages yet',
             timestamp: lastMessage ? new Date(lastMessage.created_at).toISOString() : chat.created_at,
             unreadCount: unreadCount,
@@ -147,7 +144,7 @@ const MessagesHome: React.FC = () => {
             sender_id,
             created_at,
             status,
-            sender:profiles!sender_id(display_name)
+            profiles:sender_id(display_name)
           `)
           .eq('receiver_id', user.id)
           .eq('status', 'pending');
@@ -155,20 +152,15 @@ const MessagesHome: React.FC = () => {
         if (requestsError) throw requestsError;
 
         // Process request data
-        const processedRequests = requestsData?.map(request => {
-          // Fix access to sender's display_name
-          const senderName = request.sender?.display_name || 'Unknown User';
-          
-          return {
-            id: request.id,
-            senderId: request.sender_id,
-            name: senderName,
-            lastMessage: 'Would like to connect with you',
-            timestamp: request.created_at,
-            unreadCount: 1, // Always show as unread
-            isGroupChat: false
-          };
-        }) || [];
+        const processedRequests = requestsData?.map(request => ({
+          id: request.id,
+          senderId: request.sender_id,
+          name: request.profiles?.display_name || 'Unknown User',
+          lastMessage: 'Would like to connect with you',
+          timestamp: request.created_at,
+          unreadCount: 1, // Always show as unread
+          isGroupChat: false
+        })) || [];
         
         setRequests(processedRequests);
       } catch (error) {
@@ -185,6 +177,7 @@ const MessagesHome: React.FC = () => {
 
     fetchChats();
 
+    // Set up real-time subscriptions
     const messagesChannel = supabase
       .channel('messages-changes')
       .on('postgres_changes', {
@@ -507,6 +500,7 @@ const MessagesHome: React.FC = () => {
     }
   };
 
+  // Format timestamp for display
   const formatTimestamp = (isoString: string) => {
     const date = new Date(isoString);
     const now = new Date();
@@ -667,6 +661,7 @@ const MessagesHome: React.FC = () => {
         )
       )}
       
+      {/* Search Modal */}
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -695,7 +690,7 @@ const MessagesHome: React.FC = () => {
                       className="flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer"
                       onClick={() => handleSearchResultClick(result)}
                     >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cendy-blue">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cendy-blue/80 text-sm font-medium text-white mr-3">
                         {result.type === 'user' ? (
                           <User size={20} />
                         ) : (
@@ -721,6 +716,7 @@ const MessagesHome: React.FC = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Create Chat Modal */}
       <Dialog open={isCreateChatModalOpen} onOpenChange={setIsCreateChatModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
