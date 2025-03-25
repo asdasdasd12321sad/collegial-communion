@@ -7,7 +7,7 @@ import ForumPost from '@/components/forum/ForumPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
-import { supabase } from '@/config/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import NewPostModal from '@/components/post/NewPostModal';
 
 const SORT_OPTIONS = [
@@ -236,9 +236,10 @@ const Forum: React.FC = () => {
   
   const handleOpenComments = (postId: string) => {
     toast({
-      title: "Open Comments",
-      description: `Opening comments for post ${postId}`,
+      title: "Opening Comments",
+      description: "Redirecting to comment section...",
     });
+    // You can add navigation to a detailed comment page here
   };
   
   const handleSearchClick = () => {
@@ -250,6 +251,8 @@ const Forum: React.FC = () => {
   };
   
   const handlePostCreated = (newPost: any) => {
+    console.log("New post created:", newPost);
+    
     setTimeout(() => {
       setPosts(prevPosts => {
         const exists = prevPosts.some(post => post.id === newPost.id);
@@ -391,6 +394,14 @@ const Forum: React.FC = () => {
             {posts.length === 0 && (
               <div className="mt-8 text-center">
                 <p className="text-cendy-text-secondary">No forum posts found that match the selected topic.</p>
+                {isVerified && (
+                  <button
+                    onClick={handleCreatePost}
+                    className="mt-4 inline-flex items-center justify-center rounded-md bg-cendy-blue px-4 py-2 text-sm font-medium text-white hover:bg-cendy-blue/90"
+                  >
+                    Create a post
+                  </button>
+                )}
               </div>
             )}
           </>

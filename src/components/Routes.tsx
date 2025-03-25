@@ -56,8 +56,9 @@ const Routes = () => {
       <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
       <Route path="/profile/:userId?" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-      <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+      <Route path="/messages" element={<ProtectedRoute><MessagesHome /></ProtectedRoute>} />
       <Route path="/messages/home" element={<ProtectedRoute><MessagesHome /></ProtectedRoute>} />
+      <Route path="/messages/:chatType/:chatId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
       
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />

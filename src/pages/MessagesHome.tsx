@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import Header from '@/components/layout/Header';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import ChatItem from '@/components/chats/ChatItem';
-import { supabase } from '@/config/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +76,9 @@ const MessagesHome: React.FC = () => {
             // Count unread messages
             const unreadCount = messages.filter((m: any) => !m.is_read && m.sender_id !== user.id).length;
             
+            // Fix the access to owner's display_name
+            const ownerDisplayName = chatroom.owner?.display_name || 'Unknown';
+            
             return {
               id: chatroom.id,
               name: chatroom.name,
@@ -110,8 +113,10 @@ const MessagesHome: React.FC = () => {
 
         // Process direct chat data
         const processedDirectChats = directChatsData?.map(chat => {
-          // Determine the other user
+          // Determine the other user (fix access to properties)
           const otherUser = chat.user1_id === user.id ? chat.user2 : chat.user1;
+          const otherUserId = otherUser?.id || 'unknown';
+          const otherUserName = otherUser?.display_name || 'Unknown User';
           
           const messages = chat.messages || [];
           const lastMessage = messages.length > 0 
@@ -123,8 +128,8 @@ const MessagesHome: React.FC = () => {
           
           return {
             id: chat.id,
-            otherUserId: otherUser.id,
-            name: otherUser.display_name || 'Unknown User',
+            otherUserId: otherUserId,
+            name: otherUserName,
             lastMessage: lastMessage ? lastMessage.content : 'No messages yet',
             timestamp: lastMessage ? new Date(lastMessage.created_at).toISOString() : chat.created_at,
             unreadCount: unreadCount,
@@ -150,15 +155,20 @@ const MessagesHome: React.FC = () => {
         if (requestsError) throw requestsError;
 
         // Process request data
-        const processedRequests = requestsData?.map(request => ({
-          id: request.id,
-          senderId: request.sender_id,
-          name: request.sender?.display_name || 'Unknown User',
-          lastMessage: 'Would like to connect with you',
-          timestamp: request.created_at,
-          unreadCount: 1, // Always show as unread
-          isGroupChat: false
-        })) || [];
+        const processedRequests = requestsData?.map(request => {
+          // Fix access to sender's display_name
+          const senderName = request.sender?.display_name || 'Unknown User';
+          
+          return {
+            id: request.id,
+            senderId: request.sender_id,
+            name: senderName,
+            lastMessage: 'Would like to connect with you',
+            timestamp: request.created_at,
+            unreadCount: 1, // Always show as unread
+            isGroupChat: false
+          };
+        }) || [];
         
         setRequests(processedRequests);
       } catch (error) {
