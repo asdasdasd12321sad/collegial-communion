@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, X, Check, User, UsersRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import Header from '@/components/layout/Header';
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import ChatItem from '@/components/chats/ChatItem';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/config/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +33,6 @@ const MessagesHome: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
   const [createChatType, setCreateChatType] = useState<'direct' | 'group'>('direct');
 
-  // Fetch chatrooms, direct chats, and requests on component mount
   useEffect(() => {
     if (!user) return;
 
@@ -60,8 +58,8 @@ const MessagesHome: React.FC = () => {
               owner_id,
               created_at,
               updated_at,
-              profiles:owner_id(display_name),
-              messages(id, content, sender_id, created_at, is_read, profiles:sender_id(display_name))
+              owner:owner_id(display_name),
+              messages(id, content, sender_id, created_at, is_read, sender:sender_id(display_name))
             `)
             .in('id', chatroomIds)
             .order('updated_at', { ascending: false });
@@ -82,7 +80,7 @@ const MessagesHome: React.FC = () => {
               id: chatroom.id,
               name: chatroom.name,
               lastMessage: lastMessage 
-                ? `${lastMessage.profiles?.display_name || 'Unknown'}: ${lastMessage.content}` 
+                ? `${lastMessage.sender?.display_name || 'Unknown'}: ${lastMessage.content}` 
                 : 'No messages yet',
               timestamp: lastMessage ? new Date(lastMessage.created_at).toISOString() : chatroom.created_at,
               unreadCount: unreadCount,
@@ -144,7 +142,7 @@ const MessagesHome: React.FC = () => {
             sender_id,
             created_at,
             status,
-            profiles:sender_id(display_name)
+            sender:sender_id(display_name)
           `)
           .eq('receiver_id', user.id)
           .eq('status', 'pending');
@@ -155,7 +153,7 @@ const MessagesHome: React.FC = () => {
         const processedRequests = requestsData?.map(request => ({
           id: request.id,
           senderId: request.sender_id,
-          name: request.profiles?.display_name || 'Unknown User',
+          name: request.sender?.display_name || 'Unknown User',
           lastMessage: 'Would like to connect with you',
           timestamp: request.created_at,
           unreadCount: 1, // Always show as unread
@@ -177,7 +175,6 @@ const MessagesHome: React.FC = () => {
 
     fetchChats();
 
-    // Set up real-time subscriptions
     const messagesChannel = supabase
       .channel('messages-changes')
       .on('postgres_changes', {
@@ -500,7 +497,6 @@ const MessagesHome: React.FC = () => {
     }
   };
 
-  // Format timestamp for display
   const formatTimestamp = (isoString: string) => {
     const date = new Date(isoString);
     const now = new Date();
@@ -661,7 +657,6 @@ const MessagesHome: React.FC = () => {
         )
       )}
       
-      {/* Search Modal */}
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -690,7 +685,7 @@ const MessagesHome: React.FC = () => {
                       className="flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer"
                       onClick={() => handleSearchResultClick(result)}
                     >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cendy-blue/80 text-sm font-medium text-white mr-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cendy-blue">
                         {result.type === 'user' ? (
                           <User size={20} />
                         ) : (
@@ -716,7 +711,6 @@ const MessagesHome: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Create Chat Modal */}
       <Dialog open={isCreateChatModalOpen} onOpenChange={setIsCreateChatModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

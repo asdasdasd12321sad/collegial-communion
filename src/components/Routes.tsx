@@ -1,6 +1,6 @@
 
 // src/components/Routes.tsx
-import { Routes as RouterRoutes, Route, Navigate } from 'react-router-dom';
+import { Routes as RouterRoutes, Route } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Home from '@/pages/Home';
 import Login from '@/pages/Login';

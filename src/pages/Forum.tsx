@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, PlusCircle, ArrowLeft, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,7 +7,7 @@ import ForumPost from '@/components/forum/ForumPost';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/config/supabase';
 import NewPostModal from '@/components/post/NewPostModal';
 
 const SORT_OPTIONS = [
@@ -40,7 +41,7 @@ const Forum: React.FC = () => {
       
       try {
         let query = supabase
-          .from('posts_forum')
+          .from('posts')
           .select(`
             id,
             title,
@@ -50,7 +51,8 @@ const Forum: React.FC = () => {
             created_at,
             profiles(display_name, university)
           `)
-          .order(sortOption === 'new' ? 'created_at' : 'like_count', { ascending: false });
+          .eq('post_type', 'forum')
+          .order(sortOption === 'new' ? 'created_at' : 'updated_at', { ascending: false });
         
         if (topicFilter !== 'all') {
           query = query.eq('topic', topicFilter);
@@ -104,7 +106,8 @@ const Forum: React.FC = () => {
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'posts_forum'
+        table: 'posts',
+        filter: `post_type=eq.forum`
       }, (payload) => {
         const fetchAuthorAndUpdatePosts = async () => {
           const post = payload.new as any;
