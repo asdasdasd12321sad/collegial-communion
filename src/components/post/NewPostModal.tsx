@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { X, ChevronRight, Users, Lock } from 'lucide-react';
@@ -155,60 +154,20 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
         content: step1Data.content,
         author_id: user.id,
         topic: data.topic,
-        // Include any other relevant fields
+        post_type: postType
       };
 
-      let result;
-      
-      // Insert into the appropriate table based on post type
-      if (postType === 'forum') {
-        result = await supabase
-          .from('posts_forum')
-          .insert({
-            ...postData,
-            title: step1Data.title,
-            content: step1Data.content,
-            author_id: user.id,
-            topic: data.topic,
-          });
-      } else if (postType === 'confession') {
-        result = await supabase
-          .from('posts_confession')
-          .insert({
-            ...postData,
-            title: step1Data.title,
-            content: step1Data.content,
-            author_id: user.id,
-            topic: data.topic,
-          });
-      } else if (postType === 'campus') {
-        result = await supabase
-          .from('posts_campus_community')
-          .insert({
-            ...postData,
-            title: step1Data.title,
-            content: step1Data.content,
-            author_id: user.id,
-            topic: data.topic,
-          });
-      } else if (postType === 'nationwide') {
-        result = await supabase
-          .from('posts_nationwide_community')
-          .insert({
-            ...postData,
-            title: step1Data.title,
-            content: step1Data.content,
-            author_id: user.id,
-            topic: data.topic,
-          });
-      }
+      // Insert into the unified posts table
+      const result = await supabase
+        .from('posts')
+        .insert(postData);
 
-      if (result?.error) {
+      if (result.error) {
         throw result.error;
       }
 
       // Create chatroom for forum and confession posts
-      if (isForumOrConfession && result?.data?.[0]?.id) {
+      if (isForumOrConfession && result.data?.[0]?.id) {
         const postId = result.data[0].id;
         
         // Create chatroom
@@ -224,11 +183,13 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
         if (chatroomResult.error) {
           console.error("Error creating chatroom:", chatroomResult.error);
         } else if (chatroomResult.data?.[0]?.id) {
+          const chatroomId = chatroomResult.data[0].id;
+          
           // Add owner as member
           await supabase
             .from('chatroom_members')
             .insert({
-              chatroom_id: chatroomResult.data[0].id,
+              chatroom_id: chatroomId,
               user_id: user.id,
             });
             
@@ -238,7 +199,7 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
             .insert({
               sender_id: user.id,
               content: step1Data.content,
-              chatroom_id: chatroomResult.data[0].id,
+              chatroom_id: chatroomId,
             });
         }
       }
