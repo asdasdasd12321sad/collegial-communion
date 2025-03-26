@@ -135,47 +135,6 @@ export type Database = {
           },
         ]
       }
-      community_posts: {
-        Row: {
-          author_id: string | null
-          community_type: string
-          content: string
-          created_at: string
-          id: string
-          title: string
-          topic: string | null
-          updated_at: string
-        }
-        Insert: {
-          author_id?: string | null
-          community_type: string
-          content: string
-          created_at?: string
-          id?: string
-          title: string
-          topic?: string | null
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string | null
-          community_type?: string
-          content?: string
-          created_at?: string
-          id?: string
-          title?: string
-          topic?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "community_posts_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       direct_chats: {
         Row: {
           created_at: string
@@ -345,6 +304,7 @@ export type Database = {
       posts: {
         Row: {
           author_id: string | null
+          author_name: string | null
           chatroom_id: string | null
           content: string
           created_at: string
@@ -356,6 +316,7 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
+          author_name?: string | null
           chatroom_id?: string | null
           content: string
           created_at?: string
@@ -367,6 +328,7 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
+          author_name?: string | null
           chatroom_id?: string | null
           content?: string
           created_at?: string
@@ -393,7 +355,9 @@ export type Database = {
           block_status: boolean | null
           created_at: string
           display_name: string
+          full_name: string | null
           id: string
+          images: Json | null
           is_deleted: boolean | null
           last_login: string | null
           login_email: string | null
@@ -408,7 +372,9 @@ export type Database = {
           block_status?: boolean | null
           created_at?: string
           display_name: string
+          full_name?: string | null
           id: string
+          images?: Json | null
           is_deleted?: boolean | null
           last_login?: string | null
           login_email?: string | null
@@ -423,7 +389,9 @@ export type Database = {
           block_status?: boolean | null
           created_at?: string
           display_name?: string
+          full_name?: string | null
           id?: string
+          images?: Json | null
           is_deleted?: boolean | null
           last_login?: string | null
           login_email?: string | null
