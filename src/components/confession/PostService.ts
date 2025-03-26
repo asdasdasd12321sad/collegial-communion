@@ -14,10 +14,13 @@ export const ConfessionPostService = {
   // Fetch confession posts with pagination and filtering
   async getPosts(page: number, pageSize: number, topic?: string, sortBy: string = 'new') {
     try {
-      const tableName = 'posts';
+      // Calculate pagination range
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
       
+      // Start with base query
       let query = supabase
-        .from(tableName)
+        .from('posts')
         .select(`
           id,
           title,
@@ -44,8 +47,6 @@ export const ConfessionPostService = {
       }
       
       // Apply pagination
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
       query = query.range(from, to);
       
       const { data, error } = await query;
@@ -63,7 +64,7 @@ export const ConfessionPostService = {
       
       if (reactionError) throw reactionError;
       
-      const reactionCountsMap = (reactionData || []).reduce((acc, item) => {
+      const reactionCountsMap = (reactionData || []).reduce((acc: any, item) => {
         acc[item.post_id] = {
           like: item.like_count || 0,
           heart: item.heart_count || 0,
@@ -94,7 +95,7 @@ export const ConfessionPostService = {
       
       // Get total count for pagination
       const { count } = await supabase
-        .from(tableName)
+        .from('posts')
         .select('*', { count: 'exact', head: true })
         .eq('post_type', 'confession')
         .ilike('topic', topic && topic !== 'all' ? topic : '%');
@@ -190,9 +191,84 @@ export const ForumPostService = {
   // Implementation similar to ConfessionPostService but for forum posts
   async getPosts(page: number, pageSize: number, topic?: string, sortBy: string = 'new') {
     try {
-      // Similar implementation to ConfessionPostService but with post_type = 'forum'
-      const { posts, count } = await ConfessionPostService.getPosts(page, pageSize, topic, sortBy);
-      return { posts, count };
+      // Modified to use the unified posts table with post_type = 'forum'
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      let query = supabase
+        .from('posts')
+        .select(`
+          id,
+          title,
+          content,
+          topic,
+          author_id,
+          created_at,
+          chatroom_id,
+          profiles(display_name, university)
+        `)
+        .eq('post_type', 'forum');
+      
+      if (topic && topic !== 'all') {
+        query = query.ilike('topic', topic);
+      }
+      
+      if (sortBy === 'new') {
+        query = query.order('created_at', { ascending: false });
+      }
+      
+      query = query.range(from, to);
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      if (!data) return { posts: [], count: 0 };
+      
+      // Get reaction counts and format posts (similar to ConfessionPostService)
+      const postIds = data.map(post => post.id);
+      const { data: reactionData, error: reactionError } = await supabase
+        .from('reaction_counts')
+        .select('*')
+        .in('post_id', postIds);
+      
+      if (reactionError) throw reactionError;
+      
+      const reactionCountsMap = (reactionData || []).reduce((acc: any, item) => {
+        acc[item.post_id] = {
+          like: item.like_count || 0,
+          heart: item.heart_count || 0,
+          laugh: item.laugh_count || 0,
+          wow: item.wow_count || 0,
+          sad: item.sad_count || 0,
+          angry: item.angry_count || 0
+        };
+        return acc;
+      }, {});
+      
+      const formattedPosts = data.map(post => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        topic: post.topic,
+        authorId: post.author_id,
+        authorName: post.profiles?.display_name || 'Anonymous',
+        authorUniversity: post.profiles?.university || null,
+        createdAt: post.created_at,
+        reactions: reactionCountsMap[post.id] || {
+          like: 0, heart: 0, laugh: 0, wow: 0, sad: 0, angry: 0
+        },
+        commentCount: 0,
+        chatroomId: post.chatroom_id
+      }));
+      
+      const { count } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_type', 'forum')
+        .ilike('topic', topic && topic !== 'all' ? topic : '%');
+      
+      return { posts: formattedPosts, count: count || 0 };
     } catch (error) {
       console.error('Error fetching forum posts:', error);
       throw error;
@@ -228,9 +304,59 @@ export const CampusCommunityPostService = {
   // Implementation for campus community posts
   async getPosts(page: number, pageSize: number, topic?: string, sortBy: string = 'new') {
     try {
-      // Implementation would be similar to above but with post_type = 'campus_community'
-      const { posts, count } = await ConfessionPostService.getPosts(page, pageSize, topic, sortBy);
-      return { posts, count };
+      // Similar implementation but with post_type = 'campus'
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      let query = supabase
+        .from('posts')
+        .select(`
+          id,
+          title,
+          content,
+          topic,
+          author_id,
+          created_at,
+          profiles(display_name, university)
+        `)
+        .eq('post_type', 'campus');
+      
+      if (topic && topic !== 'all') {
+        query = query.ilike('topic', topic);
+      }
+      
+      if (sortBy === 'new') {
+        query = query.order('created_at', { ascending: false });
+      }
+      
+      query = query.range(from, to);
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      if (!data) return { posts: [], count: 0 };
+      
+      // Format posts for display
+      const formattedPosts = data.map(post => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        topic: post.topic,
+        authorId: post.author_id,
+        authorName: post.profiles?.display_name || 'Anonymous',
+        authorUniversity: post.profiles?.university || null,
+        createdAt: post.created_at,
+        commentCount: 0
+      }));
+      
+      const { count } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_type', 'campus')
+        .ilike('topic', topic && topic !== 'all' ? topic : '%');
+      
+      return { posts: formattedPosts, count: count || 0 };
     } catch (error) {
       console.error('Error fetching campus community posts:', error);
       throw error;
@@ -247,7 +373,7 @@ export const CampusCommunityPostService = {
             content: postData.content,
             topic: postData.topic,
             author_id: postData.authorId,
-            post_type: 'campus_community'
+            post_type: 'campus'
           }
         ])
         .select();
@@ -266,9 +392,59 @@ export const NationwideCommunityPostService = {
   // Implementation for nationwide community posts
   async getPosts(page: number, pageSize: number, topic?: string, sortBy: string = 'new') {
     try {
-      // Implementation would be similar to above but with post_type = 'nationwide_community'
-      const { posts, count } = await ConfessionPostService.getPosts(page, pageSize, topic, sortBy);
-      return { posts, count };
+      // Similar implementation but with post_type = 'nationwide'
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      let query = supabase
+        .from('posts')
+        .select(`
+          id,
+          title,
+          content,
+          topic,
+          author_id,
+          created_at,
+          profiles(display_name, university)
+        `)
+        .eq('post_type', 'nationwide');
+      
+      if (topic && topic !== 'all') {
+        query = query.ilike('topic', topic);
+      }
+      
+      if (sortBy === 'new') {
+        query = query.order('created_at', { ascending: false });
+      }
+      
+      query = query.range(from, to);
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      if (!data) return { posts: [], count: 0 };
+      
+      // Format posts for display
+      const formattedPosts = data.map(post => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        topic: post.topic,
+        authorId: post.author_id,
+        authorName: post.profiles?.display_name || 'Anonymous',
+        authorUniversity: post.profiles?.university || null,
+        createdAt: post.created_at,
+        commentCount: 0
+      }));
+      
+      const { count } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_type', 'nationwide')
+        .ilike('topic', topic && topic !== 'all' ? topic : '%');
+      
+      return { posts: formattedPosts, count: count || 0 };
     } catch (error) {
       console.error('Error fetching nationwide community posts:', error);
       throw error;
@@ -285,7 +461,7 @@ export const NationwideCommunityPostService = {
             content: postData.content,
             topic: postData.topic,
             author_id: postData.authorId,
-            post_type: 'nationwide_community'
+            post_type: 'nationwide'
           }
         ])
         .select();

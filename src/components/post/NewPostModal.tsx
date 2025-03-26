@@ -149,7 +149,7 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
       const step1Data = step1Form.getValues();
       
       // Prepare the post data based on post type
-      let postData = {
+      const postData = {
         title: step1Data.title,
         content: step1Data.content,
         author_id: user.id,
@@ -160,7 +160,8 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
       // Insert into the unified posts table
       const result = await supabase
         .from('posts')
-        .insert(postData);
+        .insert(postData)
+        .select();
 
       if (result.error) {
         throw result.error;
@@ -178,7 +179,8 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ isOpen, onClose, onPost }) 
             owner_id: user.id,
             post_id: postId,
             is_private: false,
-          });
+          })
+          .select();
         
         if (chatroomResult.error) {
           console.error("Error creating chatroom:", chatroomResult.error);

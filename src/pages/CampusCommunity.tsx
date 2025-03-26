@@ -52,9 +52,9 @@ const CampusCommunity: React.FC = () => {
         
         // Query for total count (for pagination)
         let countQuery = supabase
-          .from('community_posts')
+          .from('posts')
           .select('id', { count: 'exact', head: true })
-          .eq('community_type', 'campus');
+          .eq('post_type', 'campus');
         
         // Apply topic filter if not 'all'
         if (topicFilter !== 'all') {
@@ -75,7 +75,7 @@ const CampusCommunity: React.FC = () => {
         
         // Main query for posts with pagination
         let query = supabase
-          .from('community_posts')
+          .from('posts')
           .select(`
             id,
             title,
@@ -85,7 +85,7 @@ const CampusCommunity: React.FC = () => {
             author_id,
             profiles(display_name, university)
           `)
-          .eq('community_type', 'campus')
+          .eq('post_type', 'campus')
           .order('created_at', { ascending: false })
           .range(offset, offset + POSTS_PER_PAGE - 1);
         
@@ -182,14 +182,14 @@ const CampusCommunity: React.FC = () => {
     
     try {
       const { data, error } = await supabase
-        .from('community_posts')
+        .from('posts')
         .insert([
           {
             title: postData.title,
             content: postData.content,
             topic: postData.topic,
             author_id: user.id,
-            community_type: 'campus',
+            post_type: 'campus',
           }
         ])
         .select();

@@ -1,344 +1,197 @@
-import React, { useState, useEffect } from 'react';
-import { Search, PlusCircle, ArrowLeft, TrendingUp, Clock } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
-import ForumPost from '@/components/forum/ForumPost';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from 'react-router-dom';
-import Header from '@/components/layout/Header';
-import { supabase } from '@/integrations/supabase/client';
-import NewPostModal from '@/components/post/NewPostModal';
 
-const SORT_OPTIONS = [
-  { id: 'hot', label: 'Hot', icon: <TrendingUp size={16} /> },
-  { id: 'new', label: 'New', icon: <Clock size={16} /> },
-];
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ForumPost from '@/components/forum/ForumPost';
+import { PlusCircle, Search } from 'lucide-react';
+import NewPostModal from '@/components/post/NewPostModal';
+import { useAuth } from '@/contexts/AuthContext';
+import Header from '@/components/layout/Header';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import BottomNavigation from '@/components/layout/BottomNavigation';
+import CustomPagination from '@/components/ui/custom-pagination';
+import { supabase } from '@/integrations/supabase/client';
 
 const TOPIC_FILTERS = [
   { id: 'all', label: 'All Categories' },
-  { id: 'fun', label: 'Fun' },
-  { id: 'drama', label: 'Drama' },
-  { id: 'food', label: 'Food' },
-  { id: 'career', label: 'Career' },
   { id: 'classes', label: 'Classes' },
+  { id: 'embarrassing', label: 'Embarrassing' },
+  { id: 'money', label: 'Money' },
+  { id: 'relationships', label: 'Relationships' },
   { id: 'campus', label: 'Campus' },
 ];
+
+const POSTS_PER_PAGE = 5;
 
 const Forum: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isVerified = user?.verificationStatus === 'verified';
-  const [sortOption, setSortOption] = useState('hot');
-  const [topicFilter, setTopicFilter] = useState('all');
-  const [posts, setPosts] = useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [forumPosts, setForumPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [topicFilter, setTopicFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   
   useEffect(() => {
     const fetchPosts = async () => {
       setIsLoading(true);
       
       try {
+        // Calculate pagination range
+        const from = (currentPage - 1) * POSTS_PER_PAGE;
+        const to = from + POSTS_PER_PAGE - 1;
+        
+        // Start with base query
         let query = supabase
-          .from('posts_forum')
+          .from('posts')
           .select(`
             id,
             title,
             content,
             author_id,
-            topic,
+            profiles(display_name, university),
             created_at,
-            profiles(display_name, university)
+            topic,
+            chatroom_id
           `)
-          .order(sortOption === 'new' ? 'created_at' : 'like_count', { ascending: false });
+          .eq('post_type', 'forum');
         
+        // Apply topic filter if not 'all'
         if (topicFilter !== 'all') {
-          query = query.eq('topic', topicFilter);
+          query = query.ilike('topic', topicFilter);
         }
+        
+        // Apply sorting and pagination
+        query = query.order('created_at', { ascending: false })
+          .range(from, to);
         
         const { data, error } = await query;
         
         if (error) {
-          throw error;
+          console.error('Error fetching forum posts:', error);
+          return;
         }
         
-        if (data) {
-          const formattedPosts = data.map(post => ({
-            id: post.id,
-            title: post.title,
-            content: post.content,
-            authorId: post.author_id,
-            authorName: post.profiles?.display_name || 'Anonymous',
-            authorSchool: post.profiles?.university || 'Unknown University',
-            createdAt: post.created_at,
-            commentCount: 0,
-            topic: post.topic,
-            reactions: { 
-              like: 0, 
-              heart: 0, 
-              laugh: 0, 
-              wow: 0, 
-              sad: 0, 
-              angry: 0 
-            }
-          }));
-          
-          setPosts(formattedPosts);
+        // Get total count for pagination
+        const { count, error: countError } = await supabase
+          .from('posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_type', 'forum')
+          .ilike('topic', topicFilter !== 'all' ? topicFilter : '%');
+        
+        if (countError) {
+          console.error('Error fetching count:', countError);
+          return;
         }
+        
+        // Calculate total pages
+        setTotalPages(Math.max(1, Math.ceil((count || 0) / POSTS_PER_PAGE)));
+        
+        // Format posts
+        const formattedPosts = data.map(post => ({
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          authorId: post.author_id,
+          authorName: post.profiles?.display_name || 'Anonymous',
+          authorUniversity: post.profiles?.university || 'Unknown University',
+          createdAt: post.created_at,
+          topic: post.topic,
+          commentCount: 0, // This would be fetched from a separate table if needed
+          chatroomId: post.chatroom_id
+        }));
+        
+        setForumPosts(formattedPosts);
       } catch (error) {
         console.error('Error fetching forum posts:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load forum posts. Please try again later.',
-          variant: 'destructive',
-        });
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchPosts();
-    
-    const channel = supabase
-      .channel('forum-posts-changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'posts_forum'
-      }, (payload) => {
-        const fetchAuthorAndUpdatePosts = async () => {
-          const post = payload.new as any;
+  }, [currentPage, topicFilter]);
+  
+  const handleOpenPost = (chatroomId: string) => {
+    if (chatroomId) {
+      navigate(`/messages/chatroom/${chatroomId}`);
+    }
+  };
+  
+  const handleNewPost = (postData: any) => {
+    // Refresh posts after creating a new one
+    if (currentPage === 1) {
+      // If on first page, just refresh the current page
+      const fetchPosts = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('posts')
+            .select(`
+              id,
+              title,
+              content,
+              author_id,
+              profiles(display_name, university),
+              created_at,
+              topic,
+              chatroom_id
+            `)
+            .eq('post_type', 'forum')
+            .order('created_at', { ascending: false })
+            .range(0, POSTS_PER_PAGE - 1);
           
-          const { data: authorData } = await supabase
-            .from('profiles')
-            .select('display_name, university')
-            .eq('id', post.author_id)
-            .single();
+          if (error) {
+            console.error('Error fetching updated forum posts:', error);
+            return;
+          }
           
-          const newPost = {
+          const formattedPosts = data.map(post => ({
             id: post.id,
             title: post.title,
             content: post.content,
             authorId: post.author_id,
-            authorName: authorData?.display_name || 'Anonymous',
-            authorSchool: authorData?.university || 'Unknown University',
+            authorName: post.profiles?.display_name || 'Anonymous',
+            authorUniversity: post.profiles?.university || 'Unknown University',
             createdAt: post.created_at,
-            commentCount: 0,
             topic: post.topic,
-            reactions: { 
-              like: 0, 
-              heart: 0, 
-              laugh: 0, 
-              wow: 0, 
-              sad: 0, 
-              angry: 0 
-            }
-          };
-          
-          setPosts(prevPosts => [newPost, ...prevPosts]);
-        };
-        
-        fetchAuthorAndUpdatePosts();
-      })
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [sortOption, topicFilter]);
-  
-  const handleCreatePost = () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You need to be logged in to create a post.",
-        variant: "default",
-      });
-      return;
-    }
-    
-    if (!isVerified) {
-      toast({
-        title: "Verification Required",
-        description: "Only verified users can create forum posts.",
-        variant: "default",
-      });
-      return;
-    }
-    
-    setIsPostModalOpen(true);
-  };
-  
-  const handleReactionClick = async (postId: string, reactionType: string) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You need to be logged in to react to posts.",
-        variant: "default",
-      });
-      return;
-    }
-    
-    if (!isVerified) {
-      toast({
-        title: "Verification Required",
-        description: "Only verified users can react to posts.",
-        variant: "default",
-      });
-      return;
-    }
-    
-    try {
-      const { data: existingReactions } = await supabase
-        .from('post_reactions')
-        .select('*')
-        .eq('post_id', postId)
-        .eq('user_id', user.id);
-      
-      if (existingReactions && existingReactions.length > 0) {
-        await supabase
-          .from('post_reactions')
-          .update({ reaction_type: reactionType })
-          .eq('post_id', postId)
-          .eq('user_id', user.id);
-      } else {
-        await supabase
-          .from('post_reactions')
-          .insert({
-            post_id: postId,
-            user_id: user.id,
-            reaction_type: reactionType
-          });
-      }
-      
-      setPosts(prevPosts => 
-        prevPosts.map(post => {
-          if (post.id === postId) {
-            const updatedReactions = { ...post.reactions };
-            updatedReactions[reactionType as keyof typeof post.reactions] += 1;
-            return { ...post, reactions: updatedReactions };
-          }
-          return post;
-        })
-      );
-    } catch (error) {
-      console.error('Error updating reaction:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update reaction. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  const handleOpenComments = (postId: string) => {
-    toast({
-      title: "Open Comments",
-      description: `Opening comments for post ${postId}`,
-    });
-  };
-  
-  const handleSearchClick = () => {
-    navigate('/forum/search');
-  };
-  
-  const handleBackClick = () => {
-    navigate(-1);
-  };
-  
-  const handlePostCreated = (newPost: any) => {
-    setTimeout(() => {
-      setPosts(prevPosts => {
-        const exists = prevPosts.some(post => post.id === newPost.id);
-        if (exists) return prevPosts;
-        
-        return [
-          {
-            ...newPost,
-            authorName: user?.displayName || 'Anonymous',
-            authorSchool: user?.university || 'Unknown University',
-            createdAt: new Date().toISOString(),
             commentCount: 0,
-            reactions: { 
-              like: 0, 
-              heart: 0, 
-              laugh: 0, 
-              wow: 0, 
-              sad: 0, 
-              angry: 0 
-            }
-          },
-          ...prevPosts
-        ];
-      });
-    }, 500);
+            chatroomId: post.chatroom_id
+          }));
+          
+          setForumPosts(formattedPosts);
+        } catch (error) {
+          console.error('Error refreshing posts:', error);
+        }
+      };
+      
+      fetchPosts();
+    } else {
+      // If not on first page, navigate to first page to see the new post
+      setCurrentPage(1);
+    }
   };
   
-  const formatTimestamp = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays > 30) {
-      return date.toLocaleDateString();
-    } else if (diffDays >= 1) {
-      return `${diffDays}d`;
-    } else {
-      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-      if (diffHours >= 1) {
-        return `${diffHours}h`;
-      } else {
-        const diffMinutes = Math.floor(diffTime / (1000 * 60));
-        if (diffMinutes >= 1) {
-          return `${diffMinutes}m`;
-        } else {
-          const diffSeconds = Math.floor(diffTime / 1000);
-          return `${diffSeconds}s`;
-        }
-      }
-    }
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
   };
   
   return (
-    <div className="flex min-h-screen flex-col bg-cendy-gray pb-20">
+    <div className="flex min-h-screen flex-col bg-cendy-gray pb-16">
       <Header 
         title="Forum" 
-        centerTitle
-        leftElement={
-          <button onClick={handleBackClick} className="flex items-center text-cendy-text">
-            <ArrowLeft size={20} />
-          </button>
-        }
+        centerTitle 
         rightElement={
-          <button onClick={handleSearchClick} className="text-cendy-text">
+          <button onClick={() => navigate('/forum/search')} className="text-cendy-text">
             <Search size={20} />
           </button>
         }
       />
       
-      <div className="flex px-4 py-2 gap-2 bg-white shadow-sm">
-        <Select value={sortOption} onValueChange={setSortOption}>
-          <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
-            <div className="flex items-center gap-2">
-              {SORT_OPTIONS.find(opt => opt.id === sortOption)?.icon}
-              <SelectValue placeholder="Sort By" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {SORT_OPTIONS.map((option) => (
-              <SelectItem key={option.id} value={option.id}>
-                <div className="flex items-center gap-2">
-                  {option.icon}
-                  {option.label}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
+      {/* Topic Filter */}
+      <div className="px-4 py-2 bg-white">
         <Select value={topicFilter} onValueChange={setTopicFilter}>
-          <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm">
+          <SelectTrigger className="bg-white rounded-xl border border-cendy-gray-medium h-9 px-3 py-1 text-sm w-full">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
@@ -351,61 +204,60 @@ const Forum: React.FC = () => {
         </Select>
       </div>
       
-      <main className="flex-1 p-0">
+      <main className="flex-1 p-4 space-y-4">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin h-8 w-8 border-4 border-cendy-blue border-t-transparent rounded-full"></div>
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cendy-blue"></div>
           </div>
-        ) : (
-          <>
-            <div className="space-y-0">
-              {posts.map((post, index) => (
-                <React.Fragment key={post.id}>
-                  <ForumPost
-                    title={post.title}
-                    content={post.content}
-                    authorName={post.authorName}
-                    authorSchool={post.authorSchool}
-                    createdAt={formatTimestamp(post.createdAt)}
-                    reactions={post.reactions}
-                    commentCount={post.commentCount}
-                    tags={[]}
-                    onReactionClick={(reactionType) => handleReactionClick(post.id, reactionType)}
-                    onCommentClick={() => handleOpenComments(post.id)}
-                    className="px-4 py-3"
-                    topic={post.topic}
-                    fullWidth={true}
-                    authorId={post.authorId}
-                    currentUserId={user?.id}
-                  />
-                  {index < posts.length - 1 && (
-                    <div className="post-separator mx-auto"></div>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+        ) : forumPosts.length > 0 ? (
+          <div className="space-y-4">
+            {forumPosts.map((post) => (
+              <ForumPost
+                key={post.id}
+                title={post.title}
+                content={post.content}
+                authorName={post.authorName}
+                createdAt={post.createdAt}
+                commentCount={post.commentCount}
+                onPostClick={() => handleOpenPost(post.chatroomId)}
+                university={post.authorUniversity}
+                topic={post.topic}
+              />
+            ))}
             
-            {posts.length === 0 && (
-              <div className="mt-8 text-center">
-                <p className="text-cendy-text-secondary">No forum posts found that match the selected topic.</p>
+            {totalPages > 1 && (
+              <div className="mt-6 flex justify-center">
+                <CustomPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
               </div>
             )}
-          </>
+          </div>
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-cendy-text-secondary">No forum posts found. Be the first to create one!</p>
+          </div>
         )}
         
+        {/* Add Post Button */}
         <button
-          onClick={handleCreatePost}
-          className="floating-add-button"
+          onClick={() => setIsModalOpen(true)}
+          className="fixed right-6 bottom-20 bg-cendy-blue text-white rounded-full p-3 shadow-lg z-10 hover:bg-cendy-blue-dark transition-colors"
         >
-          <PlusCircle size={20} className="text-white" />
+          <PlusCircle size={24} />
         </button>
+        
+        {/* New Post Modal */}
+        <NewPostModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onPost={handleNewPost}
+        />
       </main>
       
-      <NewPostModal 
-        isOpen={isPostModalOpen} 
-        onClose={() => setIsPostModalOpen(false)} 
-        onPost={handlePostCreated}
-      />
+      <BottomNavigation />
     </div>
   );
 };
